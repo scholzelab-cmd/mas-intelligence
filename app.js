@@ -20,12 +20,14 @@ const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+
 const date=x=>x?new Date(x.length===10?x+"T12:00:00":x).toLocaleDateString("pt-BR"):"Não encontrado";
 const uid=()=>crypto.randomUUID();
 const demoItems=[["Construtora Exemplo Azul (fictícia)","Residencial Horizonte (exemplo)"],["Incorporadora Modelo Norte (fictícia)","Parque das Águas (exemplo)"],["Empreendimentos Teste SC (fictícia)","Jardins do Norte (exemplo)"]];
-const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",notice:"",error:false,loading:false,checks:[]};
+const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",notice:"",error:false,loading:false,checks:[],draft:null,authEpoch:0};
 function blank(){
 const l={company:"",city:"Joinville",uf:"SC",segment:"Construtora / incorporadora",project:"",company_size:"",project_stage:"",verification_status:"identificada",opportunity_type:"hipotese_exploratoria",commercial_status:"nao_contatada",confidence:"baixa",source_url:"",source_checked_at:null,signal:"",signal_date:null,website:"",buyer_department:"",contact_channel:"",contact_email:"",contact_phone:"",next_action:"",dossier:""};
 POINTS.forEach(p=>l[p[0]]=0);return l;
 }
 function startDemo(){
+if(config.allowDemo===false){state.demo=false;note("Demonstração desativada.",true);return;}
+state.authEpoch++;state.editing=null;state.draft=null;state.selected=null;state.error=false;
 state.demo=true;state.workspace=null;state.user=null;state.role="demo";
 state.leads=demoItems.map((x,i)=>({...blank(),id:"demo-"+i,company:x[0],project:x[1],dossier:"Registro inteiramente fictício para demonstração. Não é uma empresa prospectada.",created_at:new Date().toISOString()}));
 state.evidences=[];state.activities=[];state.view="dashboard";state.notice="Modo demonstração: empresas fictícias e alterações apenas em memória. Os dados são apagados ao recarregar.";
@@ -55,9 +57,14 @@ if(t==="gatilho_indireto"&&s!==0&&(s<9||s>17))return"Gatilho indireto aceita 0 p
 if(t==="demanda_explicita"&&s!==0&&(s<18||s>25))return"Demanda explícita aceita 0 provisório ou 18–25 pontos.";
 return null;
 }
+function clearAccount(){
+state.authEpoch++;state.user=null;state.workspace=null;state.role=null;state.leads=[];state.evidences=[];state.activities=[];state.selected=null;state.editing=null;state.draft=null;state.checks=[];state.filter="";state.view="dashboard";
+}
 async function load(){
 if(!state.db||!state.user)return;
+const epoch=state.authEpoch,userId=state.user.id;
 const member=await state.db.from("workspace_members").select("workspace_id,role").eq("user_id",state.user.id).limit(1);
+if(epoch!==state.authEpoch||state.user?.id!==userId)return;
 if(member.error)throw member.error;
 if(!member.data?.length){state.workspace=null;state.role=null;state.leads=[];state.activities=[];state.evidences=[];state.notice="Usuário autenticado, mas ainda não foi vinculado à organização MAS.";state.error=true;render();return;}
 state.workspace=member.data[0].workspace_id;state.role=member.data[0].role;
@@ -66,6 +73,7 @@ state.db.from("leads").select("*").eq("workspace_id",state.workspace).order("upd
 state.db.from("evidences").select("*").eq("workspace_id",state.workspace).order("created_at",{ascending:false}),
 state.db.from("activities").select("*").eq("workspace_id",state.workspace).order("created_at",{ascending:false})
 ]);
+if(epoch!==state.authEpoch||state.user?.id!==userId)return;
 for(const res of [leads,evidences,activities])if(res.error)throw res.error;
 state.leads=leads.data||[];state.evidences=evidences.data||[];state.activities=activities.data||[];
 }
@@ -119,7 +127,7 @@ function testPage(){
 return '<div class="panel"><h2>Diagnóstico da aplicação</h2><p class="muted">Estes testes verificam funções locais do programa. Não substituem testes reais de RLS nem de disponibilidade do Supabase.</p>'+button("Executar testes","test","","primary")+'<div style="margin-top:14px">'+state.checks.map(x=>'<div class="testline"><span>'+escape(x.name)+'</span>'+pill(x.ok?"PASSOU":"FALHOU",x.ok?"green":"amber")+'</div>').join("")+'</div></div>';
 }
 function editor(){
-const x=state.editing==="new"?blank():state.leads.find(l=>l.id===state.editing);if(!x)return"";
+const x=state.draft||(state.editing==="new"?blank():state.leads.find(l=>l.id===state.editing));if(!x)return"";
 return '<div class="modal-back"><div class="modal"><div class="modal-head"><h2>'+escape(state.editing==="new"?"Cadastrar empresa":"Editar "+x.company)+'</h2>'+button("Fechar","close","","small outline")+'</div><form id="lead-form" style="display:flex;flex-direction:column;min-height:0;overflow:hidden"><div class="modal-body"><div class="form-section">01 · Empresa</div><div class="grid2">'+field("company","Razão comercial / nome *",x.company)+field("city","Município *",x.city)+field("uf","UF",x.uf)+field("segment","Atividade",x.segment)+field("project","Empreendimento",x.project)+field("company_size","Porte comprovado (informe a fonte)",x.company_size)+field("project_stage","Estágio atual do projeto",x.project_stage)+field("buyer_department","Departamento comprador",x.buyer_department)+select("verification_status","Estado de verificação",x.verification_status,VERIFY)+select("opportunity_type","Tipo de oportunidade",x.opportunity_type,TYPES)+select("commercial_status","Status comercial",x.commercial_status,STAGES)+select("confidence","Confiança",x.confidence,[["baixa","Baixa"],["media","Média"],["alta","Alta"]])+'</div>'+
 '<div class="form-section">02 · Fontes e contatos</div>'+area("signal","Sinal ou hipótese comercial",x.signal)+'<div class="grid2" style="margin:10px 0">'+field("signal_date","Data do sinal",x.signal_date,"date")+field("source_checked_at","Data da consulta",x.source_checked_at,"date")+field("source_url","URL de verificação",x.source_url,"url")+field("website","Site corporativo",x.website,"url")+field("contact_email","E-mail público",x.contact_email,"email")+field("contact_phone","Telefone público",x.contact_phone)+field("contact_channel","Canal adequado",x.contact_channel)+'</div>'+area("next_action","Próxima ação",x.next_action)+'<div style="margin-top:10px">'+area("dossier","Descrição, riscos e lacunas",x.dossier)+'</div>'+
 '<div class="form-section">03 · Pontuação Sherlock</div><p class="muted">Registre apenas pontos sustentados por fatos. Valor ausente = zero provisório.</p><div class="grid2">'+POINTS.map(p=>'<div class="field"><label>'+escape(p[1])+' · 0–'+p[2]+'</label><input name="'+p[0]+'" class="input" type="number" min="0" max="'+p[2]+'" step="1" value="'+Number(x[p[0]]||0)+'"></div>').join("")+'</div></div><div class="modal-foot">'+button("Cancelar","close","","outline")+'<button class="btn primary" type="submit">Salvar lead</button></div></form></div></div>';
@@ -132,7 +140,7 @@ POINTS.forEach(p=>x[p[0]]=Number(d.get(p[0])||0));return x;
 }
 async function refresh(){if(!state.demo)await load();render()}
 async function saveLead(f){
-const x=formLead(f),error=validate(x);if(error)throw Error(error);
+const x=formLead(f);state.draft=x;const error=validate(x);if(error)throw Error(error);
 const old=state.editing==="new"?null:state.leads.find(l=>l.id===state.editing);
 if(state.leads.some(l=>l.id!==(old?.id)&&norm(l.company)===norm(x.company)&&norm(l.city)===norm(x.city)))throw Error("Empresa já cadastrada nessa cidade.");
 let id=old?.id;
@@ -149,7 +157,7 @@ if(r.error)throw r.error;id=r.data.id;
 }
 await load();
 }
-state.editing=null;state.selected=id;state.view="dossier";note("Registro salvo "+(state.demo?"temporariamente na demonstração.":"no banco de dados."));
+state.editing=null;state.draft=null;state.selected=id;state.view="dossier";note("Registro salvo "+(state.demo?"temporariamente na demonstração.":"no banco de dados."));
 }
 async function saveStage(f){
 const x=state.leads.find(l=>l.id===state.selected),v=String(new FormData(f).get("stage"));
@@ -231,9 +239,9 @@ if(state.loading)return;state.loading=true;
 try{
 if(act==="nav"){state.view=id;state.notice="";render();}
 else if(act==="open"){state.selected=id;state.view="dossier";state.notice="";render();}
-else if(act==="new"){if(!editable())throw Error("Somente leitura.");state.editing="new";render();}
-else if(act==="edit"){if(!editable())throw Error("Somente leitura.");state.editing=id;render();}
-else if(act==="close"){state.editing=null;render();}
+else if(act==="new"){if(!editable())throw Error("Somente leitura.");state.draft=null;state.editing="new";render();}
+else if(act==="edit"){if(!editable())throw Error("Somente leitura.");state.draft=null;state.editing=id;render();}
+else if(act==="close"){state.draft=null;state.editing=null;render();}
 else if(act==="refresh")await refresh();
 else if(act==="test")test();
 else if(act==="csv")exportCSV();
@@ -242,7 +250,7 @@ else if(act==="del-evidence")await deletion(id,"evidences");
 else if(act==="demo")startDemo();
 else if(act==="reset-demo")startDemo();
 else if(act==="back-login"){state.demo=false;state.notice="";render();}
-else if(act==="logout"){const r=await state.db.auth.signOut();if(r.error)throw r.error;state.user=null;state.workspace=null;state.role=null;state.leads=[];state.activities=[];state.evidences=[];state.view="dashboard";render();}
+else if(act==="logout"){const r=await state.db.auth.signOut();if(r.error)throw r.error;clearAccount();state.notice="Sessão encerrada.";state.error=false;render();}
 }catch(err){note(err.message||String(err),true)}finally{state.loading=false;}
 });
 root.addEventListener("submit",async e=>{
@@ -263,9 +271,23 @@ root.addEventListener("input",e=>{
 if(e.target.id==="search"){state.filter=e.target.value;const at=e.target.selectionStart;render();const el=root.querySelector("#search");if(el){el.focus();el.setSelectionRange(at,at);}}
 });
 async function init(){
-if(!connected){startDemo();return;}
+if(!connected){
+if(!url&&!key&&config.allowDemo!==false){startDemo();return;}
+state.demo=false;state.notice="Ambiente real indisponível: confira a configuração e o carregamento do Supabase. Nenhum dado real foi carregado.";state.error=true;render();return;
+}
 try{
 state.db=window.supabase.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true}});
+state.db.auth.onAuthStateChange((event,session)=>{
+if(event==="SIGNED_OUT"){
+if(!state.demo){clearAccount();state.notice="Sessão encerrada. Entre novamente.";state.error=false;render();}
+return;
+}
+if(session?.user&&!state.demo&&state.user?.id!==session.user.id){
+clearAccount();state.user=session.user;
+// Não consultar o banco dentro do callback do Auth.
+setTimeout(()=>load().then(render).catch(err=>note(err.message||String(err),true)),0);
+}
+});
 const s=await state.db.auth.getSession();
 if(s.error)throw s.error;
 if(s.data.session?.user){state.user=s.data.session.user;state.demo=false;await load();render();}
