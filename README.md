@@ -1,92 +1,48 @@
-# MAS Intelligence CRM
-Projeto web responsivo da MAS - Producao Visual e Audiovisual.
-Versão v1.2.1 — demonstração para GitHub Pages; Supabase ainda não configurado.
+# MAS Intelligence CRM — v1.2.2
 
-CRM: https://scholzelab-cmd.github.io/mas-intelligence/
-Repositório: https://github.com/scholzelab-cmd/mas-intelligence
+CRM B2B exclusivo da MAS — Produção Visual e Audiovisual.
 
-A demo não exige login. Alterações ficam na memória desta aba e são perdidas ao recarregar. Não use dados reais.
+- Aplicação: https://scholzelab-cmd.github.io/mas-intelligence/
+- Repositório: https://github.com/scholzelab-cmd/mas-intelligence
+- Publicação: GitHub Pages, branch `main`, pasta raiz, HTTPS.
+- Banco: projeto Supabase `mas-intelligence`, plano Free, São Paulo.
 
-Validação local: `node tests/core.test.cjs` — 59 verificações aprovadas.
-Consulte RELATORIO-TECNICO.md para o resultado dos testes públicos e pendências.
+## Estado desta versão
 
-Alterações sobre o ZIP v1.2: correção da seleção no dossiê, layout móvel, campos de porte e estágio, indicadores separados no dashboard, histórico de mudanças do funil na demo e exportação dos novos campos.
+Banco e Auth configurados. Esquema SQL e RLS aplicados em 19/10/2026. Três leads reais pesquisados foram inseridos somente no banco protegido; não constam nos arquivos públicos nem na demonstração.
 
-ARQUIVOS
-- index.html: entrada do aplicativo
-- styles.css: layout responsivo
-- app.js: operacoes do CRM
-- config.js: URL e publishable key do Supabase
-- supabase/schema.sql: tabelas, score, RLS e politicas
-- TESTES.md: validacao manual antes do uso real
-- .nojekyll: instrui o GitHub Pages a publicar os arquivos como estaticos
+A conta inicial do CRM deve ser criada pelo proprietário no painel Authentication > Users > Add user > Create new user. O login administrativo no Supabase via GitHub não cria automaticamente uma conta na aplicação.
 
-1. CRIE O BANCO DE DADOS
-Acesse https://supabase.com/dashboard e crie um projeto.
-Abra SQL Editor e execute o arquivo supabase/schema.sql em um
-projeto NOVO. Esse script nao e migracao para banco ja existente.
+Após criar a conta, vincular seu UUID ao workspace MAS em `workspace_members`, com papel admin. A vinculação e os testes de login válido precisam ser confirmados antes de declarar operação integral. Não compartilhar senhas; criar contas individuais para a equipe. Viewer apenas lê, editor cadastra/edita, admin também exclui.
 
-2. CRIE A ORGANIZACAO
-No SQL Editor, execute:
-    insert into public.workspaces(name)
-    values ('MAS Intelligence') returning id;
-Guarde o UUID retornado.
+A demo permanece explicitamente fictícia, em memória e sem sincronização com o banco real. Recarregar apaga suas alterações.
 
-3. CRIE O USUARIO ADMINISTRADOR
-Em Authentication > Users, crie um usuario da sua equipe.
-Copie o UUID do usuario. No SQL Editor, execute:
-    insert into public.workspace_members(workspace_id,user_id,role)
-    values('UUID_DO_WORKSPACE','UUID_DO_USUARIO','admin');
-Substitua os dois UUIDs pelos valores corretos.
-Para o chefe, crie outro usuario e vincule como 'viewer', 'editor' ou 'admin'.
-Apenas 'admin' pode apagar leads.
+## Validação
 
-4. CONFIGURE O APLICATIVO
-Abra config.js e preencha:
-    supabaseUrl: "https://seu-projeto.supabase.co"
-    supabasePublishableKey: "sb_publishable_..."
-Nunca use service_role ou uma secret key.
-A URL e a chave publicavel nao sao segredos; a seguranca
-depende da autenticacao e das politicas RLS do Supabase.
+- `node tests/core.test.cjs`: 59 verificações locais aprovadas.
+- `node tests/session.test.cjs`: 6 verificações de sessão/configuração/rascunho com cliente simulado aprovadas.
+- `tests/rls.sql`: executado no PostgreSQL Supabase real com PASS. Usa usuários sem senha e dados temporários revertidos por rollback; não testa o serviço Auth.
+- Acesso REST anônimo a leads retornou HTTP 401/42501.
+- Login de conta inexistente retornou credenciais inválidas na API e na interface pública.
 
-5. PUBLIQUE NO GITHUB
-Crie um repositorio (por exemplo mas-intelligence).
-Extraia o ZIP e envie os ARQUIVOS e PASTAS para a RAIZ do repositorio.
-Em Settings > Pages > Build and deployment:
-  Source: Deploy from a branch
-  Branch: main
-  Folder: /(root)
-  Save.
-O endereco esperado sera:
-https://SEU-USUARIO.github.io/mas-intelligence/
-A publicacao depende da execucao do GitHub Pages.
-Nao se deve enviar o arquivo ZIP fechado como unico arquivo do repositorio.
+Consulte RELATORIO-TECNICO.md para distinguir testes realizados e pendências. Não considerar testes simulados como validação de login e sessão reais.
 
-6. CONFIGURACAO DE AUTH
-Supabase > Authentication > URL Configuration:
-  Site URL: URL PUBLICADA no GitHub Pages
-  Redirect URLs: inclua a URL completa com a barra final.
-Para o login por senha implementado, nao ha callback OAuth.
-O usuario precisa existir e estar autorizado no workspace.
+## Arquivos
 
-7. CHECKLIST DE ENTREGA
-Leia TESTES.md e execute TODOS os testes reais, com duas contas.
-Nao utilize dados comerciais reais antes de concluir os testes RLS.
-O projeto contem DEMONSTRACAO com empresas inteiramente ficticias
-e nao sincroniza a demo com a base real.
+`index.html`, `styles.css`, `app.js`, `config.js`, `.nojekyll`, `supabase/schema.sql`, `supabase/migrations/001_lead_fields.sql`, `tests/core.test.cjs`, `tests/session.test.cjs`, `tests/rls.sql`, `TESTES.md`, `RELATORIO-TECNICO.md`.
 
-8. LIMITACOES DA V1
-- Nao envia e-mails, WhatsApp ou mensagens automaticamente.
-- Nao pesquisa empresas automaticamente (Sherlock assistido/manual).
-- Nao existe backup remoto configurado, apenas exportacao CSV.
-- Nao possui convite de usuarios na interface; configurar no Supabase.
-- Nao comprova autenticidade da URL de evidencia por si so.
-- Recarregar a pagina atualiza a lista; alteracoes de colegas nao sao
-  sincronizadas em tempo real.
-- A persistencia de sessao e controlada pelo cliente Supabase no navegador.
-  Use contas individuais e nao compartilhe o dispositivo sem sair.
+`schema.sql` é para banco NOVO; não executar sobre a instalação existente. A migração 001 adiciona porte e estágio em instalações antigas.
 
-DOCUMENTACAO OFICIAL
-https://docs.github.com/en/pages
-https://supabase.com/docs/guides/auth
-https://supabase.com/docs/guides/database/postgres/row-level-security
+## Segurança e acesso
+
+Somente URL e chave publicável estão em config.js. Nenhuma chave administrativa ou senha deve entrar no frontend/repositório. Signup público e login anônimo estão desabilitados. Site URL e redirect URL usam o endereço público completo. As permissões dependem de Auth e RLS no servidor.
+
+A aplicação escuta SIGNED_OUT e limpa dados em memória. Respostas tardias de consultas não podem restaurar o cache após logout. Erros de validação preservam o rascunho do lead.
+
+## Publicação e manutenção
+
+Alterar os arquivos, executar as duas suítes Node, revisar segredos e atualizar o parâmetro de versão dos assets. Enviar commits para main, aguardar sucesso em Actions e testar o endereço publicado. Alterações SQL precisam ser aplicadas separadamente ao banco; publicar arquivos não executa migrações automaticamente.
+
+## Limitações
+
+Sem envio automático de mensagens, pesquisa automática, convite pela interface, sincronização em tempo real ou backup/restauração validado. Dados e fontes precisam de revisão humana. Score não representa probabilidade de compra. Validar CSV em Excel/LibreOffice e os testes autenticados pendentes antes do uso diário.
