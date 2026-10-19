@@ -41,6 +41,19 @@ function area(n,t,v){return '<div class="field"><label for="f-'+n+'">'+escape(t)
 function select(n,t,v,items){return '<div class="field"><label for="f-'+n+'">'+escape(t)+'</label><select id="f-'+n+'" name="'+n+'" class="input">'+items.map(x=>'<option value="'+escape(x[0])+'" '+(x[0]===v?"selected":"")+'>'+escape(x[1])+'</option>').join("")+'</select></div>'}
 function detail(k,v){return '<div class="detail"><small>'+escape(k)+'</small><span>'+escape(v||"Não encontrado")+'</span></div>'}
 function hlink(u){return safeURL(u)?'<a href="'+escape(u)+'" target="_blank" rel="noopener noreferrer">'+escape(u)+'</a>':escape(u||"Não encontrado")}
+function whatsappNumber(value){
+const raw=String(value||'').trim();
+if(!raw||!/^[+\d\s().-]+$/.test(raw))return null;
+let n=raw.replace(/\D/g,'');
+if(n.length===10||n.length===11)n='55'+n;
+return /^55[1-9]\d(?:[2-5]\d{7}|9\d{8})$/.test(n)?n:null;
+}
+function whatsappPanel(x){
+if(state.demo)return '<div class="panel" style="margin-top:13px"><h2>WhatsApp</h2><p>Demonstração fictícia: contatos externos desativados.</p></div>';
+if(['descartada'].includes(x.verification_status)||['nao_contatar','perdida'].includes(x.commercial_status))return '<div class="panel" style="margin-top:13px"><h2>WhatsApp</h2><p>Contato bloqueado pelo estado deste lead.</p></div>';
+const n=whatsappNumber(x.contact_phone);
+return '<div class="panel" style="margin-top:13px"><h2>WhatsApp</h2><p>Conversa manual pelo WhatsApp da sua sessão.</p>'+ (n?'<p><strong>Destino: +'+escape(n)+'</strong></p><a class="btn primary" href="https://wa.me/'+n+'" target="_blank" rel="noopener noreferrer">Abrir número no WhatsApp</a>':'<p>Informe um único telefone brasileiro válido com DDD no cadastro. Não corrigimos números incompletos automaticamente.</p>')+'<p class="muted">Confirme o destinatário e a adequação do canal antes de enviar. Telefone publicado não comprova conta WhatsApp nem autorização para mensagens. A abertura não altera o funil; registre o contato somente depois do envio real.</p><p class="muted">Recebimento, sincronização e atendimento automático: API oficial ainda não conectada.</p></div>';
+}
 function level(x){const n=score(x);return n===null?["Sem score",""]:n>=80?["Muito alta","green"]:n>=60?["Alta","blue"]:n>=40?["Moderada","amber"]:["Baixa",""]}
 function editable(){return state.demo||["admin","editor"].includes(state.role)}
 function navItems(){return [["dashboard","◫","Dashboard"],["leads","▤","Leads"],["pipeline","▦","Funil"],["dossier","◇","Dossiês"],["tests","✓","Diagnóstico"]]}
@@ -121,7 +134,7 @@ ev.map(e=>'<div class="detail"><strong>'+escape(e.attribute_name)+'</strong> '+p
 (editable()?'<form id="activity-form"><div class="grid2">'+select("type","Tipo","nota",[["nota","Nota"],["evidencia","Pesquisa"],["contato","Contato realizado"],["reuniao","Reunião"],["proposta","Proposta"]])+field("description","Descrição do ocorrido","")+'</div><button class="btn primary" style="margin-top:10px" type="submit">Adicionar registro</button></form>':"")+'</div></div>'+
 '<div><div class="panel"><h2>Score Sherlock</h2><div class="row between"><strong style="font-size:31px">'+(s??"—")+' <small class="muted" style="font-size:12px">/100</small></strong>'+pill(level(x)[0],level(x)[1])+'</div>'+(s===null?'<p class="muted">Pontuação não publicada: identidade ainda não verificada ou lead descartado.</p>':"")+
 gr.map(g=>{const n=g[1].reduce((v,k)=>v+Number(x[k]||0),0);return '<div style="margin-top:14px"><div class="row between" style="font-size:12px;margin-bottom:6px"><span>'+g[0]+'</span><strong>'+n+'/'+g[2]+'</strong></div><div class="track"><div class="track-fill" style="width:'+(n/g[2]*100)+'%"></div></div></div>'}).join("")+detail("Confiança",x.confidence)+'</div>'+
-'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
+whatsappPanel(x)+'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
 }
 function testPage(){
 return '<div class="panel"><h2>Diagnóstico da aplicação</h2><p class="muted">Estes testes verificam funções locais do programa. Não substituem testes reais de RLS nem de disponibilidade do Supabase.</p>'+button("Executar testes","test","","primary")+'<div style="margin-top:14px">'+state.checks.map(x=>'<div class="testline"><span>'+escape(x.name)+'</span>'+pill(x.ok?"PASSOU":"FALHOU",x.ok?"green":"amber")+'</div>').join("")+'</div></div>';
