@@ -1,27 +1,31 @@
-# MAS Intelligence CRM — v1.2.2
+# MAS Intelligence CRM — v1.3.0
 
 CRM B2B exclusivo da MAS — Produção Visual e Audiovisual.
 
 - Aplicação: https://scholzelab-cmd.github.io/mas-intelligence/
 - Repositório: https://github.com/scholzelab-cmd/mas-intelligence
 - Publicação: GitHub Pages, branch `main`, pasta raiz, HTTPS.
-- Banco: projeto Supabase `mas-intelligence`, plano Free, São Paulo.
+- Banco: projeto Supabase `mas-intelligence`, plano Free, us-east-1 (região confirmada pela API; corrige o relato anterior de São Paulo).
 
 ## Estado desta versão
 
-Banco e Auth configurados. Esquema SQL e RLS aplicados em 19/10/2026. Três leads reais pesquisados foram inseridos somente no banco protegido; não constam nos arquivos públicos nem na demonstração.
+Banco e Auth configurados. Esquema SQL e RLS aplicados em 19/10/2026. 100 empresas pesquisadas foram inseridas somente no banco protegido: três verificadas e 97 identificadas, com fontes e lacunas; não são 100 oportunidades qualificadas. Nenhuma foi contatada e nenhum dado comercial real está na demonstração ou no repositório público.
 
-A conta inicial do CRM deve ser criada pelo proprietário no painel Authentication > Users > Add user > Create new user. O login administrativo no Supabase via GitHub não cria automaticamente uma conta na aplicação.
+Conta inicial criada pelo proprietário e vinculada como admin da MAS. Login válido e leitura da base privada observados. O login administrativo no Supabase via GitHub não substitui a conta da aplicação.
 
-Após criar a conta, vincular seu UUID ao workspace MAS em `workspace_members`, com papel admin. A vinculação e os testes de login válido precisam ser confirmados antes de declarar operação integral. Não compartilhar senhas; criar contas individuais para a equipe. Viewer apenas lê, editor cadastra/edita, admin também exclui.
+Para adicionar equipe, criar contas individuais e vincular seus UUIDs ao workspace em `workspace_members`. Não compartilhar a senha do administrador. Viewer apenas lê, editor cadastra/edita, admin também exclui.
+
+Painel WhatsApp no dossiê abre número validado para envio manual pelo operador. Não envia, não comprova entrega e não muda o funil. API oficial e atendimento automático ainda não conectados; ver WHATSAPP.md. Mudanças de etapa no banco geram histórico atômico com autoria, sob RLS.
 
 A demo permanece explicitamente fictícia, em memória e sem sincronização com o banco real. Recarregar apaga suas alterações.
 
 ## Validação
 
-- `node tests/core.test.cjs`: 59 verificações locais aprovadas.
+- `node tests/core.test.cjs`: 70 verificações locais aprovadas, incluindo 11 do WhatsApp.
 - `node tests/session.test.cjs`: 6 verificações de sessão/configuração/rascunho com cliente simulado aprovadas.
 - `tests/rls.sql`: executado no PostgreSQL Supabase real com PASS. Usa usuários sem senha e dados temporários revertidos por rollback; não testa o serviço Auth.
+- Importação repetida sem duplicação: 100 leads, 100 evidências, 100 notas; nenhuma fonte ausente ou autoria fora da organização.
+- Leitura sob papel authenticated: 100 registros; testes reais de RLS e auditoria de etapa com rollback aprovados.
 - Acesso REST anônimo a leads retornou HTTP 401/42501.
 - Login de conta inexistente retornou credenciais inválidas na API e na interface pública.
 
@@ -29,9 +33,9 @@ Consulte RELATORIO-TECNICO.md para distinguir testes realizados e pendências. N
 
 ## Arquivos
 
-`index.html`, `styles.css`, `app.js`, `config.js`, `.nojekyll`, `supabase/schema.sql`, `supabase/migrations/001_lead_fields.sql`, `tests/core.test.cjs`, `tests/session.test.cjs`, `tests/rls.sql`, `TESTES.md`, `RELATORIO-TECNICO.md`.
+`index.html`, `styles.css`, `app.js`, `config.js`, `.nojekyll`, `supabase/schema.sql`, `supabase/migrations/001_lead_fields.sql`, `tests/core.test.cjs`, `tests/session.test.cjs`, `tests/rls.sql`, `TESTES.md`, `RELATORIO-TECNICO.md`, `WHATSAPP.md`.
 
-`schema.sql` é para banco NOVO; não executar sobre a instalação existente. A migração 001 adiciona porte e estágio em instalações antigas.
+`schema.sql` é para banco NOVO; não executar sobre a instalação existente. A migração 001 adiciona porte e estágio em instalações antigas. No banco existente foram aplicadas as migrações restrict_rls_event_trigger_execution e audit_commercial_stage_changes; não reaplicar schema.sql. A função de auditoria consta do esquema atualizado para instalações novas.
 
 ## Segurança e acesso
 
