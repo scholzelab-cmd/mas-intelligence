@@ -1,3 +1,38 @@
+# Atualização v1.2.2 — 19/10/2026
+
+Esta seção substitui o estado operacional da v1.2.1, preservada abaixo como histórico.
+
+## Concluído
+
+- Organização MAS Intelligence e projeto mas-intelligence criados no Supabase, plano Free, região São Paulo.
+- schema.sql aplicado com sucesso e RLS ativo nas cinco tabelas.
+- Workspace MAS criado e três leads revalidados gravados em PostgreSQL, como verificados e não contatados, com fontes, consulta em 19/10/2026, hipóteses e lacunas. Nenhum dado real foi incluído no repositório público ou na demo.
+- config.js ligado ao projeto apenas com URL e chave publicável. Nenhuma chave administrativa/senha publicada.
+- Signup público desativado; login anônimo permanece desativado. Site URL e redirect URL configurados para a aplicação pública.
+- Tratamento de SIGNED_OUT, limpeza de estado e proteção contra respostas de banco atrasadas após logout.
+- Rascunho de lead preservado em erro de validação, com erro apresentado no modal.
+- Botão de retorno ao login no cabeçalho da demo, também acessível no celular.
+- Migração aditiva para os campos de porte/estágio em instalações v1.2 antigas.
+
+## Testes executados
+
+- 59 verificações core + 6 de sessão/configuração/rascunho: PASS. Os seis testes novos usam SDK simulado; não equivalem a testes de Auth real.
+- tests/rls.sql: PASS executado no PostgreSQL real. Perfis viewer/editor/admin, isolamento de organizações, autoria, bloqueio de transferência de lead, evidência cruzada, cascata e acesso anônimo. Dados/usuários temporários sem senha foram revertidos. Conferência posterior encontrou zero usuários QA remanescentes.
+- REST sem sessão com chave publicável: HTTP 401, permission denied (42501), comportamento esperado.
+- Serviço Auth com credenciais fictícias inválidas: HTTP 400 invalid_credentials.
+- Interface pública apresentou Acessar CRM e rejeitou a conta inexistente. Nenhum lead real apareceu sem login.
+- Tabela real confirmou persistência dos três registros e scores calculados pelo banco (44, 52 e 54), sem promover automaticamente os registros a qualificados/acionáveis.
+
+## Pendências de autenticação e uso diário
+
+O proprietário precisa criar a conta inicial no formulário Authentication > Users > Create new user. Depois é necessário vincular o UUID ao workspace como admin e validar login na aplicação. O login no painel Supabase via GitHub não substitui essa conta.
+
+Ainda NÃO aprovados: login válido, logout real, recarregamento e edição pela interface autenticada, sessão expirada/revogada, CSV baixado e aberto em planilha, backup/restauração, equipe com contas individuais e testes em aparelhos físicos. Não declarar operação integral antes de concluir essa lista.
+
+As fontes principais estão nos próprios leads; evidências complementares e autoria das pesquisas devem ser associadas à conta real após sua criação. Nenhuma abordagem foi enviada. Porte e compradores seguem pendentes; previsões de mês/ano não foram convertidas em datas fictícias.
+
+---
+
 # MAS Intelligence CRM — v1.2.1
 
 Entrega de 19/10/2026. Demonstração publicada; NÃO liberada para produção com dados reais.
