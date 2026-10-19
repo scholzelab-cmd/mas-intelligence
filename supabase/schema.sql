@@ -193,3 +193,23 @@ m.workspace_id=activities.workspace_id and m.user_id=(select auth.uid()) and m.r
 -- values('UUID_DO_WORKSPACE','UUID_DO_USUARIO','admin');
 --
 -- Nunca colocar usuário administrador, senha ou secret key em config.js.
+
+-- v1.3.0: histórico atômico das mudanças de etapa. SECURITY INVOKER mantém RLS.
+create function public.record_lead_stage_change() returns trigger
+language plpgsql security invoker set search_path = '' as $$
+begin
+  if new.commercial_status is distinct from old.commercial_status then
+    if auth.uid() is null then
+      raise exception 'Mudança de etapa exige autoria autenticada';
+    end if;
+    insert into public.activities(workspace_id,lead_id,type,description,author_id)
+    values(new.workspace_id,new.id,'nota',
+      'Etapa alterada: '||old.commercial_status||' → '||new.commercial_status||
+      '. Alteração de cadastro; não comprova envio de mensagem.',auth.uid());
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function public.record_lead_stage_change() from public,anon,authenticated;
+create trigger leads_record_stage_change after update of commercial_status
+on public.leads for each row execute function public.record_lead_stage_change();
