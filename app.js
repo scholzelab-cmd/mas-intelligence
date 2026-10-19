@@ -36,9 +36,10 @@ render();
 function note(t,isError=false){state.notice=t;state.error=isError;render()}
 function button(text,action,arg="",kind=""){return '<button class="btn '+kind+'" type="button" data-action="'+action+'" '+(arg?'data-id="'+escape(arg)+'"':"")+'>'+text+'</button>'}
 function pill(t,kind=""){return '<span class="pill '+kind+'">'+escape(t)+'</span>'}
-function field(n,t,v,type="text"){return '<div class="field"><label for="f-'+n+'">'+escape(t)+'</label><input id="f-'+n+'" name="'+n+'" class="input" type="'+type+'" value="'+escape(v??"")+'"></div>'}
-function area(n,t,v){return '<div class="field"><label for="f-'+n+'">'+escape(t)+'</label><textarea id="f-'+n+'" class="input" name="'+n+'" rows="3">'+escape(v||"")+'</textarea></div>'}
-function select(n,t,v,items){return '<div class="field"><label for="f-'+n+'">'+escape(t)+'</label><select id="f-'+n+'" name="'+n+'" class="input">'+items.map(x=>'<option value="'+escape(x[0])+'" '+(x[0]===v?"selected":"")+'>'+escape(x[1])+'</option>').join("")+'</select></div>'}
+let fieldId=0;
+function field(n,t,v,type="text"){const id="f-"+n+"-"+(++fieldId);return '<div class="field"><label for="'+id+'">'+escape(t)+'</label><input id="'+id+'" name="'+n+'" class="input" type="'+type+'" value="'+escape(v??"")+'"></div>'}
+function area(n,t,v){const id="f-"+n+"-"+(++fieldId);return '<div class="field"><label for="'+id+'">'+escape(t)+'</label><textarea id="'+id+'" class="input" name="'+n+'" rows="3">'+escape(v||"")+'</textarea></div>'}
+function select(n,t,v,items){const id="f-"+n+"-"+(++fieldId);return '<div class="field"><label for="'+id+'">'+escape(t)+'</label><select id="'+id+'" name="'+n+'" class="input">'+items.map(x=>'<option value="'+escape(x[0])+'" '+(x[0]===v?"selected":"")+'>'+escape(x[1])+'</option>').join("")+'</select></div>'}
 function detail(k,v){return '<div class="detail"><small>'+escape(k)+'</small><span>'+escape(v||"Não encontrado")+'</span></div>'}
 function hlink(u){return safeURL(u)?'<a href="'+escape(u)+'" target="_blank" rel="noopener noreferrer">'+escape(u)+'</a>':escape(u||"Não encontrado")}
 function whatsappNumber(value){
