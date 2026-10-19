@@ -21,12 +21,13 @@ A demo permanece explicitamente fictícia, em memória e sem sincronização com
 
 ## Validação
 
-- `node tests/core.test.cjs`: 70 verificações locais aprovadas, incluindo 11 do WhatsApp.
+- `node tests/core.test.cjs`: 71 verificações locais aprovadas, incluindo 11 do WhatsApp.
 - `node tests/session.test.cjs`: 6 verificações de sessão/configuração/rascunho com cliente simulado aprovadas.
 - `tests/rls.sql`: executado no PostgreSQL Supabase real com PASS. Usa usuários sem senha e dados temporários revertidos por rollback; não testa o serviço Auth.
 - Importação repetida sem duplicação: 100 leads, 100 evidências, 100 notas; nenhuma fonte ausente ou autoria fora da organização.
 - Leitura sob papel authenticated: 100 registros; testes reais de RLS e auditoria de etapa com rollback aprovados.
 - Acesso REST anônimo a leads retornou HTTP 401/42501.
+- Interface autenticada: navegação, busca, funil, diagnóstico 12/12, edição persistida e logout seguidos de reload aprovados. Viewport 390x844 inspecionado sem overflow horizontal da página; console consultado sem avisos/erros.
 - Login de conta inexistente retornou credenciais inválidas na API e na interface pública.
 
 Consulte RELATORIO-TECNICO.md para distinguir testes realizados e pendências. Não considerar testes simulados como validação de login e sessão reais.
