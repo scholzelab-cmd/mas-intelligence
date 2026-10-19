@@ -1,10 +1,52 @@
+# Atualização v1.3.0 — 19/10/2026
+
+Esta seção substitui os estados anteriores, preservados abaixo como histórico.
+
+## Concluído e verificado
+
+- Conta inicial criada pelo proprietário, vinculada como admin; login válido e leitura autenticada observados no site.
+- 100 empresas no banco privado: três verificadas e 97 identificadas sem score. Não são 100 oportunidades qualificadas. Fontes e lacunas registradas; nenhum contato comercial realizado.
+- 100 evidências e 100 notas de pesquisa, sem duplicatas por empresa/cidade, sem fonte ausente e sem autoria fora da organização. A repetição do seed manteve os mesmos totais. Scores originais preservados.
+- Leitura sob papel authenticated confirmou 100 leads/evidências/atividades. tests/rls.sql repetido no PostgreSQL real com PASS, inclusive novos testes de histórico de etapa e não duplicação quando a etapa não muda. Fixtures revertidas.
+- Região confirmada pela API de gerenciamento: us-east-1. O relato anterior de São Paulo estava incorreto; não houve migração de região.
+- Migração restrict_rls_event_trigger_execution aplicada: retirada execução da função administrativa rls_auto_enable de PUBLIC, anon e authenticated; conferido anon_execute=false e authenticated_execute=false.
+- Migração audit_commercial_stage_changes aplicada: trigger SECURITY INVOKER registra etapa e autoria na mesma transação, mantendo RLS. Teste real com rollback aprovado. Definição incluída em schema.sql para banco novo; não reaplicar o esquema inteiro na instalação existente.
+- Painel WhatsApp implementado no dossiê: número/destino explícito, abertura manual via wa.me, validação de formato brasileiro, bloqueio de descartadas/perdidas/não contatar e contatos externos desativados na demo. Abrir não envia mensagem nem avança funil. API oficial e bot ainda não conectados.
+- 71 verificações locais de núcleo (11 novas do WhatsApp) + 6 de sessão: 77 PASS. node --check app.js passou. Varredura dos arquivos do frontend não encontrou padrões de credenciais secretas.
+
+## Validação pública desta atualização
+
+- Dashboard autenticado mostrou 100 empresas, três verificadas e zero reuniões/propostas/convertidas.
+- Dossiê real exibiu fonte, evidência, nota de pesquisa, lacunas e score ausente para candidata identificada.
+- Painel WhatsApp público exibiu destino e link wa.me coerentes com o telefone cadastrado. Não foi enviada mensagem a empresas.
+- Publicação feita pelo editor web GitHub porque a integração de escrita retornou403. Conferir commit final no histórico de main e na mensagem de entrega; o SHA não é embutido no próprio commit.
+
+- Correção adicional: IDs únicos nos campos do modal e do dossiê, evitando rótulos apontarem para o formulário errado; teste local de unicidade aprovado.
+- Edição de próxima ação em registro real pela interface: confirmação no banco e após reload.
+- Navegação autenticada, busca Exatus com um resultado, funil com 100 não contatadas e diagnóstico 12/12 aprovados.
+- Dossiê/WhatsApp inspecionado a 390x844: uma coluna; largura documental 375 <= viewport 390, sem overflow horizontal da página. Nenhum aviso/erro na consulta ao console.
+- Logout real aprovado: Sessão encerrada, depois reload continuou no login sem dados privados. Conta deve entrar novamente com sua senha; não foi coletada senha.
+- Download CSV novamente inconclusivo na ferramenta; geração/escape local aprovados, abertura em planilha não executada.
+
+## Pendências e limites
+
+CNPJ ativo, porte, relações societárias, projeto/cronograma, comprador, orçamento e demanda das candidatas exigem qualificação individual. Número público não garante WhatsApp nem consentimento. Contatos incompletos permanecem pendentes; não acrescentar dígitos por suposição. A base comercial/seed fica fora do repositório público.
+
+API oficial WhatsApp, webhook, envio/recebimento/status, atendimento automático, transferência humana e aprendizagem revisada não ativos; ver WHATSAPP.md. A MAS usa WhatsApp Business no celular; número/conta Meta, coexistência, provedor e custos ainda precisam ser definidos.
+
+Auditor de segurança após correções: permanece aviso de proteção contra senhas vazadas desativada. Não foi alterada senha nem contratado plano. Referência: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+Continuam pendentes até confirmação adicional: cadastro/exclusão completos reais pela interface, CSV aberto em planilha, sessão expirada/revogada, backup/restauração e aparelhos físicos. Testes locais e SQL não substituem toda a validação ponta a ponta. Não declarar produção plenamente homologada.
+
+---
+
 # Atualização v1.2.2 — 19/10/2026
 
 Esta seção substitui o estado operacional da v1.2.1, preservada abaixo como histórico.
 
 ## Concluído
 
-- Organização MAS Intelligence e projeto mas-intelligence criados no Supabase, plano Free, região São Paulo.
+- Organização MAS Intelligence e projeto mas-intelligence criados no Supabase, plano Free, região relatada inicialmente como São Paulo (corrigida para us-east-1 na seção v1.3.0).
 - schema.sql aplicado com sucesso e RLS ativo nas cinco tabelas.
 - Workspace MAS criado e três leads revalidados gravados em PostgreSQL, como verificados e não contatados, com fontes, consulta em 19/10/2026, hipóteses e lacunas. Nenhum dado real foi incluído no repositório público ou na demo.
 - config.js ligado ao projeto apenas com URL e chave publicável. Nenhuma chave administrativa/senha publicada.
@@ -86,7 +128,7 @@ Entrega de 19/10/2026. Demonstração publicada; NÃO liberada para produção c
 - Integração GitHub recusou gravação de árvore com 403 apesar de informar permissões de escrita. Publicação realizada pelo editor web autenticado, sem ampliar permissões.
 - Upload do navegador exigia acesso da extensão a file URLs. Não foi ativado; usado editor web.
 - Confirmação nativa do funil bloqueou o controle de uma aba. A demo foi ajustada e a mudança de etapa foi retestada com sucesso em nova aba e assets atuais.
-- Cópia duplicada de TESTES.md em supabase foi removida. Existe um marcador supabase/.nojekyll redundante e inofensivo, além do marcador correto na raiz.
+- Cópia antiga redundante de TESTES.md em supabase permanece no repositório; usar o TESTES.md da raiz como documento atual. Existe um marcador supabase/.nojekyll redundante e inofensivo, além do marcador correto na raiz.
 
 ## Testes inconclusivos e não executados
 
