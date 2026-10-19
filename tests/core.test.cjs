@@ -7,11 +7,18 @@ class TestURL extends URL{static createObjectURL(b){exportedBlob=b;return 'blob:
 const context={document:{getElementById:()=>root,body:{appendChild(){}},createElement:()=>({click(){},remove(){}})},window:{MAS_CONFIG:{}},URL:TestURL,Blob,crypto:require('node:crypto').webcrypto,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}},confirm:()=>true,setTimeout:()=>{}};
 vm.createContext(context);
 const source=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
-vm.runInContext(source.replace('init();\n})();','window.testAPI={blank,validate,score,caps,state,test,saveLead,saveStage,addEvidence,addActivity,deletion,dossierPage,exportCSV,startDemo};init();\n})();'),context);
+vm.runInContext(source.replace('init();\n})();','window.testAPI={blank,validate,score,caps,state,test,whatsappNumber,whatsappPanel,saveLead,saveStage,addEvidence,addActivity,deletion,dossierPage,editor,exportCSV,startDemo};init();\n})();'),context);
 const a=context.window.testAPI;let count=0;
 function check(name,fn){fn();count++;console.log('PASS '+name)}
 (async()=>{
 a.test();check('diagnóstico embutido 12/12',()=>assert.equal(a.state.checks.filter(x=>x.ok).length,12));
+for(const n of ['(47) 99999-1234','+55 47 99999-1234','5547999991234'])check('WhatsApp normaliza '+n,()=>assert.equal(a.whatsappNumber(n),'5547999991234'));
+for(const n of ['(47) 3453.099','47999991234 / 47999995678','javascript:alert(1)','5511999991234?text=oi',''])check('WhatsApp rejeita entrada ambígua/inválida '+n,()=>assert.equal(a.whatsappNumber(n),null));
+a.state.demo=false;
+check('WhatsApp respeita não contatar',()=>assert.ok(!a.whatsappPanel({...a.blank(),contact_phone:'47999991234',commercial_status:'nao_contatar'}).includes('https://wa.me/')));
+check('WhatsApp não inventa envio nem altera funil',()=>{const x={...a.blank(),contact_phone:'47999991234'};const before=JSON.stringify(x);assert.ok(a.whatsappPanel(x).includes('https://wa.me/5547999991234'));assert.equal(JSON.stringify(x),before)});
+a.state.demo=true;
+check('WhatsApp não abre contato na demo',()=>assert.ok(!a.whatsappPanel({...a.blank(),contact_phone:'47999991234'}).includes('https://wa.me/')));
 const valid={...a.blank(),company:'Empresa fictícia QA',verification_status:'verificada',source_url:'https://example.com/qa',source_checked_at:'2026-10-19'};
 check('zero provisório',()=>assert.equal(a.score(valid),0));
 check('máximo 100 válido',()=>{const x={...valid,...a.caps,opportunity_type:'demanda_explicita'};assert.equal(a.score(x),100);assert.equal(a.validate(x),null)});
@@ -28,6 +35,7 @@ await a.addEvidence({attribute_name:'Porte',evidence_status:'confirmado',source_
 await a.addActivity({type:'nota',description:'Atividade fictícia QA'});
 check('evidência e histórico vinculados',()=>{assert.equal(a.state.evidences[0].lead_id,id);assert.equal(a.state.activities[0].lead_id,id)});
 check('dossiê exibe evidência',()=>assert.ok(a.dossierPage().includes('Evidência fictícia de teste')));
+check('formulários e modal têm IDs únicos para rótulos acessíveis',()=>{a.state.editing=id;const html=a.dossierPage()+a.editor();const ids=Array.from(html.matchAll(/\sid="([^"]+)"/g),m=>m[1]);assert.equal(ids.length,new Set(ids).size);a.state.editing=null});
 a.state.leads[0].company='=HYPERLINK("malicioso")';a.exportCSV();const csv=await exportedBlob.text();
 check('CSV contém campos novos sem duplicação',()=>{const h=csv.split('\r\n')[0].split(',');assert.equal(h.filter(x=>x==='company_size').length,1);assert.ok(h.includes('project_stage'))});
 check('CSV neutraliza fórmula e preserva acentos',()=>{assert.ok(csv.includes("'=HYPERLINK"));assert.ok(csv.includes('Joinville'))});
