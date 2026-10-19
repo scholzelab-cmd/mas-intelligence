@@ -37,6 +37,10 @@ select set_config('request.jwt.claim.sub',(select editor_id::text from qa_contex
 insert into public.leads(workspace_id,company,city) select wa,'QA EDITOR','Joinville' from qa_context;
 with changed as(update public.leads set company='QA EDITADO' where id=(select lead_a from qa_context) returning id)
 select pg_temp.assert_true((select count(*) from changed)=1,'editor atualiza');
+update public.leads set commercial_status='contato_planejado' where id=(select lead_a from qa_context);
+select pg_temp.assert_true((select count(*) from public.activities where lead_id=(select lead_a from qa_context) and author_id=auth.uid())=1,'etapa grava histórico com autoria sob RLS');
+update public.leads set commercial_status='contato_planejado' where id=(select lead_a from qa_context);
+select pg_temp.assert_true((select count(*) from public.activities where lead_id=(select lead_a from qa_context))=1,'etapa inalterada não duplica histórico');
 with removed as(delete from public.leads returning id)
 select pg_temp.assert_true((select count(*) from removed)=0,'editor não exclui');
 DO $$ begin
