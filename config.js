@@ -1,8 +1,6 @@
-// Apenas informações PUBLICÁVEIS. Nunca coloque service_role ou secret key.
+// Somente URL e chave PUBLICÁVEL. Segurança aplicada por Auth e RLS no Supabase.
 window.MAS_CONFIG = {
-  supabaseUrl: "",
-  supabasePublishableKey: "",
+  supabaseUrl: "https://mrpssxjgtwzwprdbqwnr.supabase.co",
+  supabasePublishableKey: "sb_publishable_db3HJBytkJuazhCcxFZdiA_N4LE0k-z",
   allowDemo: true
 };
-// Sem URL/chave pública, a aplicação abre em demonstração fictícia.
-// Com Supabase configurado, o acesso real exige usuário autorizado.
