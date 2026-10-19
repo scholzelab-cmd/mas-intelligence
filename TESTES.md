@@ -1,14 +1,17 @@
 # Atualização de testes v1.3.0
 
-- node tests/core.test.cjs:70 PASS, incluindo11 novos testes WhatsApp.
-- node tests/session.test.cjs:6 PASS.
+- node tests/core.test.cjs: 71 PASS, incluindo 11 novos testes WhatsApp.
+- node tests/session.test.cjs: 6 PASS.
 - tests/rls.sql:PASS no Supabase real, com fixtures em transação/rollback. Inclui auditoria da etapa e ausência de histórico duplicado quando etapa não muda.
 - Seed privado executado e repetido:100 leads/100 evidências/100 notas, zero duplicatas/fontes ausentes/erros de autoria. Novas identificadas sem score, três scores anteriores preservados.
 - Leitura sob papel authenticated:100/100/100.
 - Login válido e dashboard público autenticado com100 observados. Dossiê e link WhatsApp público conferidos; nenhum envio realizado.
+- Logout real: Sessão encerrada; reload permaneceu no login, sem leads. Navegação, busca Exatus, funil com 100 não contatadas, diagnóstico 12/12 e edição persistida conferidos.
+- Viewport 390x844: dossiê/WhatsApp em uma coluna, largura 375<=390, sem overflow horizontal da página. Console consultado: nenhum aviso/erro.
+- Download CSV retentado: evento novamente inconclusivo; abertura em planilha não executada.
 - Migrações de restrição de função administrativa e auditoria atômica de etapas aplicadas e verificadas.
 
-Ver RELATORIO-TECNICO.md para os retestes visuais e limitações. API oficial, envio/recebimento, bot, CSV aberto em planilha, backup/restauração, sessão revogada e aparelhos físicos continuam sem aprovação. Não confundir as76 verificações locais com76 testes ponta a ponta.
+Ver RELATORIO-TECNICO.md para os retestes visuais e limitações. API oficial, envio/recebimento, bot, CSV aberto em planilha, backup/restauração, sessão revogada e aparelhos físicos continuam sem aprovação. Não confundir as77 verificações locais com 77 testes ponta a ponta.
 
 ---
 
