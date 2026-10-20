@@ -27,7 +27,7 @@ Há também1 registro explicitamente fictício de QA criado para o teste real. A
 
 ## Limitações e continuidade
 
-Ainda pendentes:criação/login real de funcionário, exclusão pela UI, sessão expirada/revogada, CSV baixado e aberto em planilha, restauração completa de projeto/Auth, aparelhos físicos e reteste responsivo da nova área de equipe. A versão anterior foi inspecionada a390x844; isso não aprova automaticamente a nova tela. Console consultado no teste real sem warn/error.
+Ainda pendentes:criação/login real de funcionário, exclusão pela UI, sessão expirada/revogada, CSV baixado e aberto em planilha, restauração completa de projeto/Auth, aparelhos físicos. Área Equipe retestada a390x844: página com390px e formulário277px, sem overflow horizontal. Viewport restaurado. Isso não equivale a teste em aparelho físico. Console consultado no teste real sem warn/error.
 
 Função manage-employees ativa, verify_jwt=true e usuário/perfil/organização conferidos no servidor. Endpoint sem sessão retornou401. Supabase JS fixado em2.118.0. Signup público e login anônimo continuam desativados. Aviso Supabase de proteção contra senha vazada permanece; nenhum plano pago contratado.
 
