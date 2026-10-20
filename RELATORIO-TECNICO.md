@@ -1,3 +1,42 @@
+# Conferência operacional v1.4.0 — 20/10/2026
+
+Aplicação: https://scholzelab-cmd.github.io/mas-intelligence/
+Repositório: https://github.com/scholzelab-cmd/mas-intelligence
+Branch main. Commit do aplicativo confirmado: 504f0132300320ac3ad3617ca6a9035c0ffd99be.
+Publicação desse commit: https://github.com/scholzelab-cmd/mas-intelligence/actions/runs/39451409226 — completed/success.
+
+## Resultados efetivamente conferidos
+
+102 verificações locais aprovadas:74 core,6 sessão simulada,12 serviço de equipe e10 interface de equipe. CSV independente aprovado com100 registros reais e21 colunas. Não são102 testes ponta a ponta.
+
+Na interface real autenticada foram aprovados cadastro de registro fictício temporário, bloqueio de qualificação sem fonte/data, edição persistida e recuperada após reload, inclusão de evidência como hipótese e nota com autoria real. Contato planejado foi salvo com histórico atômico; não representa contato enviado. A confirmação de interação passou a ser exigida nas etapas que representam interação, e não no planejamento. Não houve abordagem comercial.
+
+Consulta real da Equipe retornou o administrador. Falha inicial de permissão do backend foi corrigida pela migração employee_service_membership_permissions: service_role recebeu somente USAGE no schema e SELECT/INSERT em workspace_members. Conferência: anon sem SELECT e authenticated sem INSERT de vínculos. Não houve ampliação de privilégios dos funcionários.
+
+## Acesso de funcionários ainda pendente de conclusão
+
+Login aceita e-mail administrativo ou nome de usuário. Equipe é exclusiva do administrador e cria somente editor. Senha nova definida diretamente no formulário, com12 a128 caracteres, maiúscula, minúscula e número, sem senha padrão no código. Identidade interna com domínio reservado mas-crm.invalid, sem e-mail de recuperação automático. Senha não entra em histórico, documentos nem frontend.
+
+Em20/10 às14h, arch01 NÃO existia no Auth. Cadastro e login reais desse funcionário ainda não foram aprovados. A tela e o serviço prontos não equivalem a conta criada. Definição da nova senha depende da interação do proprietário na aba Equipe. Não enfraquecer autenticação para aceitar senha curta.
+
+## Registro temporário e totais atuais
+
+100 empresas pesquisadas:3 verificadas e97 identificadas sem score.25 revisões conferidas diretamente pelo Work e72 pesquisas do Sherlock registradas A CONFERIR. Não são100 oportunidades qualificadas.
+
+Há também1 registro explicitamente fictício de QA criado para o teste real. A limpeza foi tentada, mas a execução SQL foi recusada pela ferramenta, sem motivo detalhado. NÃO afirmar que foi removido. Últimos totais conferidos:101 leads,126 evidências,199 atividades, incluindo o registro de QA, sua1 evidência e2 notas. Não contar QA como prospecto ou empresa real. Nenhum dos100 registros comerciais foi excluído.
+
+## Limitações e continuidade
+
+Ainda pendentes:criação/login real de funcionário, exclusão pela UI, sessão expirada/revogada, CSV baixado e aberto em planilha, restauração completa de projeto/Auth, aparelhos físicos e reteste responsivo da nova área de equipe. A versão anterior foi inspecionada a390x844; isso não aprova automaticamente a nova tela. Console consultado no teste real sem warn/error.
+
+Função manage-employees ativa, verify_jwt=true e usuário/perfil/organização conferidos no servidor. Endpoint sem sessão retornou401. Supabase JS fixado em2.118.0. Signup público e login anônimo continuam desativados. Aviso Supabase de proteção contra senha vazada permanece; nenhum plano pago contratado.
+
+WhatsApp fora do escopo por decisão do proprietário; painel manual anterior preservado, sem API/bot. Não declarar o CRM100% homologado enquanto as pendências acima não forem concluídas.
+
+As seções abaixo preservam o histórico e ficam substituídas nos pontos atualizados nesta conferência.
+
+---
+
 # Atualização v1.4.0 — acesso da equipe (20/10/2026)
 
 - Login aceita e-mail administrativo ou usuário de funcionário, como arch01.
