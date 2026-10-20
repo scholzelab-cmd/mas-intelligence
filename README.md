@@ -1,4 +1,4 @@
-# MAS Intelligence CRM — v1.3.0
+# MAS Intelligence CRM — v1.3.1
 
 CRM B2B exclusivo da MAS — Produção Visual e Audiovisual.
 
@@ -21,7 +21,7 @@ A demo permanece explicitamente fictícia, em memória e sem sincronização com
 
 ## Validação
 
-- `node tests/core.test.cjs`: 71 verificações locais aprovadas, incluindo 11 do WhatsApp.
+- `node tests/core.test.cjs`: 74 verificações locais aprovadas, incluindo 11 do WhatsApp.
 - `node tests/session.test.cjs`: 6 verificações de sessão/configuração/rascunho com cliente simulado aprovadas.
 - `tests/rls.sql`: executado no PostgreSQL Supabase real com PASS. Usa usuários sem senha e dados temporários revertidos por rollback; não testa o serviço Auth.
 - Importação repetida sem duplicação: 100 leads, 100 evidências, 100 notas; nenhuma fonte ausente ou autoria fora da organização.
@@ -32,9 +32,16 @@ A demo permanece explicitamente fictícia, em memória e sem sincronização com
 
 Consulte RELATORIO-TECNICO.md para distinguir testes realizados e pendências. Não considerar testes simulados como validação de login e sessão reais.
 
+## Conferência de 20/10/2026
+
+- Perfil editor mantém edição e deixa de receber botão de excluir lead; administrador conserva exclusão. Viewer sem controles de gravação. Três testes novos aprovados.
+- `python3 tests/csv_roundtrip.py`: exportador real lido por parser independente, 100 registros fictícios com acentos/aspas/quebras de linha e conteúdo perigoso. Também executado com fotografia privada dos 100 registros reais: PASS. Não comprova download no navegador nem Excel.
+- Dados privados: 100 empresas; 25 receberam nova revisão documental com fontes/notas em 20/10. Status e scores preservados. Revalidações do Sherlock exigem conferência antes de incorporar fatos; nenhuma promoção automática.
+- Cadastro/exclusão completos e novas sessões reais pela interface aguardam login do proprietário; RLS já testado em SQL. Não declarar homologação integral.
+
 ## Arquivos
 
-`index.html`, `styles.css`, `app.js`, `config.js`, `.nojekyll`, `supabase/schema.sql`, `supabase/migrations/001_lead_fields.sql`, `tests/core.test.cjs`, `tests/session.test.cjs`, `tests/rls.sql`, `TESTES.md`, `RELATORIO-TECNICO.md`, `WHATSAPP.md`.
+`index.html`, `styles.css`, `app.js`, `config.js`, `.nojekyll`, `supabase/schema.sql`, `supabase/migrations/001_lead_fields.sql`, `tests/core.test.cjs`, `tests/session.test.cjs`, `tests/rls.sql`, `tests/csv_roundtrip.py`, `TESTES.md`, `RELATORIO-TECNICO.md`, `WHATSAPP.md`.
 
 `schema.sql` é para banco NOVO; não executar sobre a instalação existente. A migração 001 adiciona porte e estágio em instalações antigas. No banco existente foram aplicadas as migrações restrict_rls_event_trigger_execution e audit_commercial_stage_changes; não reaplicar schema.sql. A função de auditoria consta do esquema atualizado para instalações novas.
 
@@ -50,4 +57,4 @@ Alterar os arquivos, executar as duas suítes Node, revisar segredos e atualizar
 
 ## Limitações
 
-Sem envio automático de mensagens, pesquisa automática, convite pela interface, sincronização em tempo real ou backup/restauração validado. Dados e fontes precisam de revisão humana. Score não representa probabilidade de compra. Validar CSV em Excel/LibreOffice e os testes autenticados pendentes antes do uso diário.
+Sem envio automático de mensagens, pesquisa automática, convite pela interface ou sincronização em tempo real. Backup aplicacional das cinco tabelas exportado e restaurado em tabelas temporárias com comparação integral aprovada; restauração completa de projeto/Auth/segredos em ambiente separado ainda não homologada. Dados e fontes precisam de revisão humana. Score não representa probabilidade de compra. Validar CSV em Excel/LibreOffice e os testes autenticados pendentes antes do uso diário.
