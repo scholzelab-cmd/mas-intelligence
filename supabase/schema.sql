@@ -143,6 +143,9 @@ revoke all on public.workspaces,public.workspace_members,
   public.leads,public.evidences,public.activities from anon,authenticated;
 grant usage on schema public to authenticated;
 grant select on public.workspaces,public.workspace_members to authenticated;
+-- v1.4.0: backend de equipe; clientes continuam sem INSERT de vínculos.
+grant usage on schema public to service_role;
+grant select,insert on public.workspace_members to service_role;
 grant select,insert,update,delete on public.leads to authenticated;
 grant select,insert,delete on public.evidences,public.activities to authenticated;
 
