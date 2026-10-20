@@ -20,7 +20,7 @@ const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+
 const date=x=>x?new Date(x.length===10?x+"T12:00:00":x).toLocaleDateString("pt-BR"):"Não encontrado";
 const uid=()=>crypto.randomUUID();
 const demoItems=[["Construtora Exemplo Azul (fictícia)","Residencial Horizonte (exemplo)"],["Incorporadora Modelo Norte (fictícia)","Parque das Águas (exemplo)"],["Empreendimentos Teste SC (fictícia)","Jardins do Norte (exemplo)"]];
-const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",notice:"",error:false,loading:false,checks:[],draft:null,authEpoch:0};
+const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",notice:"",error:false,loading:false,checks:[],draft:null,authEpoch:0,employees:[]};
 function blank(){
 const l={company:"",city:"Joinville",uf:"SC",segment:"Construtora / incorporadora",project:"",company_size:"",project_stage:"",verification_status:"identificada",opportunity_type:"hipotese_exploratoria",commercial_status:"nao_contatada",confidence:"baixa",source_url:"",source_checked_at:null,signal:"",signal_date:null,website:"",buyer_department:"",contact_channel:"",contact_email:"",contact_phone:"",next_action:"",dossier:""};
 POINTS.forEach(p=>l[p[0]]=0);return l;
@@ -57,7 +57,7 @@ return '<div class="panel" style="margin-top:13px"><h2>WhatsApp</h2><p>Conversa 
 }
 function level(x){const n=score(x);return n===null?["Sem score",""]:n>=80?["Muito alta","green"]:n>=60?["Alta","blue"]:n>=40?["Moderada","amber"]:["Baixa",""]}
 function editable(){return state.demo||["admin","editor"].includes(state.role)}
-function navItems(){return [["dashboard","◫","Dashboard"],["leads","▤","Leads"],["pipeline","▦","Funil"],["dossier","◇","Dossiês"],["tests","✓","Diagnóstico"]]}
+function navItems(){return [["dashboard","◫","Dashboard"],["leads","▤","Leads"],["pipeline","▦","Funil"],["dossier","◇","Dossiês"],["guide","?","Guia de uso"],["tests","✓","Diagnóstico"],...(state.role==="admin"?[["team","♙","Equipe"]]:[])]}
 function validate(x){
 if(!x.company.trim()||!x.city.trim()||!/^[A-Z]{2}$/.test(x.uf||""))return"Empresa, cidade e UF de duas letras são obrigatórios.";
 for(const [k,max] of Object.entries(caps)){const n=Number(x[k]);if(!Number.isInteger(n)||n<0||n>max)return"Score inválido: "+k;}
@@ -72,7 +72,7 @@ if(t==="demanda_explicita"&&s!==0&&(s<18||s>25))return"Demanda explícita aceita
 return null;
 }
 function clearAccount(){
-state.authEpoch++;state.user=null;state.workspace=null;state.role=null;state.leads=[];state.evidences=[];state.activities=[];state.selected=null;state.editing=null;state.draft=null;state.checks=[];state.filter="";state.view="dashboard";
+state.authEpoch++;state.employees=[];state.user=null;state.workspace=null;state.role=null;state.leads=[];state.evidences=[];state.activities=[];state.selected=null;state.editing=null;state.draft=null;state.checks=[];state.filter="";state.view="dashboard";
 }
 async function load(){
 if(!state.db||!state.user)return;
@@ -93,7 +93,7 @@ state.leads=leads.data||[];state.evidences=evidences.data||[];state.activities=a
 }
 function login(){
 root.innerHTML='<div class="signin"><div class="signin-box"><div class="brand"><div class="brand-icon">⌕</div><div><strong>MAS INTELLIGENCE</strong><small>SHERLOCK PROSPECTADOR</small></div></div><h1>Acessar CRM</h1><p class="muted">Área comercial exclusiva da MAS. Entre com sua conta autorizada.</p>'+(state.notice?'<div class="banner error">'+escape(state.notice)+'</div>':"")+
-'<form id="login-form">'+field("email","E-mail","","email")+field("password","Senha","","password")+'<button class="btn primary" style="width:100%;margin-top:12px" type="submit">Entrar</button></form>'+
+'<form id="login-form">'+field("email","E-mail ou usuário","","text")+field("password","Senha","","password")+'<button class="btn primary" style="width:100%;margin-top:12px" type="submit">Entrar</button></form>'+
 (config.allowDemo!==false?'<div style="margin-top:16px;text-align:center">'+button("Conhecer demonstração fictícia","demo","","outline")+'</div>':"")+'</div></div>';
 }
 function render(){
@@ -103,9 +103,37 @@ const top=nav.find(x=>x[0]===state.view)?.[2]||"MAS Intelligence";
 root.innerHTML='<div class="app-layout"><aside class="sidebar"><div class="brand"><div class="brand-icon">⌕</div><div><strong>MAS CRM</strong><small>INTELLIGENCE</small></div></div>'+
 nav.map(x=>'<button class="nav '+(state.view===x[0]?"active":"")+'" data-action="nav" data-id="'+x[0]+'"><span class="ico">'+x[1]+'</span><span>'+x[2]+'</span></button>').join("")+
 '<div class="sidebar-foot">'+escape(state.demo?"DEMONSTRAÇÃO":"ÁREA PROTEGIDA")+'<div style="margin-top:12px">'+button(state.demo&&connected?"Voltar ao login":state.demo?"Reiniciar demo":"Sair",state.demo?(connected?"back-login":"reset-demo"):"logout","","small")+'</div></div></aside>'+
-'<div class="main"><header class="topbar"><div><h1>'+escape(top)+'</h1><small>MAS · Produção Visual e Audiovisual</small></div><div class="row">'+pill(state.demo?"Dados fictícios":state.role==="viewer"?"Somente leitura":"Conta autorizada",state.demo?"amber":"green")+(state.demo&&connected?button("Acessar CRM","back-login","","small"):"")+(editable()?button("+ Novo lead","new","","primary"):"")+'</div></header><main class="content">'+(state.notice?'<div class="banner '+(state.error?"error":"")+'">'+escape(state.notice)+'</div>':"")+(state.workspace===null&&!state.demo?'<div class="banner error">Associe este usuário a um workspace no Supabase para usar o CRM.</div>':"")+page()+'</main></div></div>'+(state.editing!==null?editor():"");
+'<div class="main"><header class="topbar"><div><h1>'+escape(top)+'</h1><small>MAS · Produção Visual e Audiovisual</small></div><div class="row">'+pill(state.demo?"Dados fictícios":state.role==="viewer"?"Somente leitura":state.user?.user_metadata?.username||"Conta autorizada",state.demo?"amber":"green")+(state.demo&&connected?button("Acessar CRM","back-login","","small"):"")+(editable()?button("+ Novo lead","new","","primary"):"")+'</div></header><main class="content">'+(state.notice?'<div class="banner '+(state.error?"error":"")+'">'+escape(state.notice)+'</div>':"")+(state.workspace===null&&!state.demo?'<div class="banner error">Associe este usuário a um workspace no Supabase para usar o CRM.</div>':"")+page()+'</main></div></div>'+(state.editing!==null?editor():"");
 }
-function page(){return state.view==="leads"?leadsPage():state.view==="pipeline"?pipelinePage():state.view==="dossier"?dossierPage():state.view==="tests"?testPage():dashboard()}
+function page(){if(state.view==="team")return teamPage();if(state.view==="guide")return guidePage();return state.view==="leads"?leadsPage():state.view==="pipeline"?pipelinePage():state.view==="dossier"?dossierPage():state.view==="tests"?testPage():dashboard()}
+function loginEmail(value){
+const text=String(value||" ").trim().toLowerCase();
+if(text.includes("@"))return text;
+if(!/^[a-z][a-z0-9_-]{2,31}$/.test(text))throw Error("Informe seu e-mail ou um usuário válido, como arch01.");
+return text+"@mas-crm.invalid";
+}
+function guidePage(){return '<div class="panel"><h2>Como usar o CRM da MAS</h2><ol><li><strong>Acesso individual.</strong> Cada funcionário usa seu próprio usuário e senha. Ao terminar em computador compartilhado, clique em Sair.</li><li><strong>Pesquisar antes de cadastrar.</strong> Busque a empresa e a cidade em Leads para evitar duplicatas. Informe empresa, segmento, cidade/UF e próxima ação.</li><li><strong>Documentar a pesquisa.</strong> No dossiê, registre URL específica, data da consulta e o que a fonte comprova. Separe confirmado, indício, hipótese e não verificado.</li><li><strong>Qualificar com evidências.</strong> Porte, projeto, estágio e comprador desconhecidos permanecem pendentes. Empresa identificada não publica score. A pontuação não representa chance de compra.</li><li><strong>Planejar e registrar.</strong> Atualize o funil somente conforme o que aconteceu. Uma pesquisa ou abertura de link não equivale a contato enviado. Registre data, resultado e próxima ação no histórico.</li><li><strong>Exportar.</strong> Em Leads, use Exportar CSV; o arquivo corresponde à lista filtrada. Guarde os dados comerciais apenas em local autorizado.</li></ol><h3>Permissões</h3><p>Funcionário editor cadastra e edita leads, fontes e histórico. Somente administrador exclui empresas e cadastra novos funcionários. Leitor consulta e exporta.</p><h3>Base de pesquisa</h3><p>Notas marcadas A CONFERIR são pesquisas pendentes. Fonte publicada não comprova demanda, orçamento nem autorização de contato. Priorize Joinville e Norte de SC para os serviços da MAS.</p><h3>Ajuda de acesso</h3><p>Se esquecer sua senha, procure o administrador. Usuários internos não recebem e-mail de recuperação. A demonstração fictícia é separada da base real e perde alterações ao recarregar.</p></div>';}
+function teamPage(){
+if(state.demo||state.role!=="admin")return '<div class="panel"><h2>Equipe</h2><p>Acesso exclusivo do administrador.</p></div>';
+return '<div class="grid two"><section class="panel"><h2>Funcionários</h2>'+button("Atualizar equipe","team-refresh")+'<p>Cada pessoa deve ter um usuário individual. Não compartilhe a conta administrativa.</p>'+(state.employees.length?state.employees.map(x=>'<div class="detail"><strong>'+escape(x.username)+'</strong><span>'+escape(x.role==="editor"?"Funcionário editor":x.role==="viewer"?"Somente leitura":"Administrador")+'</span></div>').join(""):'<p>Clique em Atualizar equipe para consultar os acessos.</p>')+'</section><section class="panel"><h2>Novo funcionário</h2><p>O funcionário poderá cadastrar e editar a base da MAS, sem excluir empresas nem administrar acessos.</p><form id="employee-form">'+field("username","Usuário do funcionário","arch01")+field("employee_password","Senha inicial (mínimo12 caracteres)","","password")+'<p class="muted">Use maiúscula, minúscula e número. Defina a senha diretamente aqui; ela não será exibida no histórico nem salva no código. O login usa o nome escolhido, sem precisar de e-mail. Recuperação pelo administrador.</p><button type="submit" class="btn primary">Criar funcionário editor</button></form></section></div>';
+}
+async function teamRequest(body){
+if(state.demo||state.role!=="admin"||!state.workspace)throw Error("Somente o administrador gerencia a equipe.");
+const epoch=state.authEpoch,userId=state.user?.id,workspace=state.workspace;
+const result=await state.db.functions.invoke("manage-employees",{body:{...body,workspace_id:workspace}});
+if(epoch!==state.authEpoch||userId!==state.user?.id||workspace!==state.workspace)throw Error("Sessão alterada. Entre novamente.");
+if(result.error){let message="Não foi possível acessar o serviço de equipe.";try{message=(await result.error.context.json()).error||message}catch{}throw Error(message);}
+if(result.data?.error)throw Error(result.data.error);
+return result.data;
+}
+async function loadTeam(){const result=await teamRequest({action:"list"});state.employees=result.employees||[];}
+async function createEmployee(form){
+const d=new FormData(form);const username=String(d.get("username")||"").trim().toLowerCase(),password=String(d.get("employee_password")||"");
+if(!/^[a-z][a-z0-9_-]{2,31}$/.test(username))throw Error("Usuário:3 a32 caracteres, começando por letra; use letras, números, _ ou -.");
+if(password.length<12||password.length>128||!/[a-z]/.test(password)||!/[A-Z]/.test(password)||!/\d/.test(password))throw Error("A senha precisa ter12 a128 caracteres, com maiúscula, minúscula e número.");
+const result=await teamRequest({action:"create",username,password});
+form.reset();await loadTeam();state.notice=result.message||"Funcionário criado.";state.error=false;render();
+}
 function dashboard(){
 const l=state.leads;
 const k=[["Empresas",l.length],["Verificadas",l.filter(verified).length],["Prioridade alta+",l.filter(x=>score(x)!==null&&score(x)>=60).length],["Reuniões",l.filter(x=>x.commercial_status==="reuniao").length],["Propostas",l.filter(x=>x.commercial_status==="proposta").length],["Negociações",l.filter(x=>x.commercial_status==="negociacao").length],["Convertidas",l.filter(x=>x.commercial_status==="convertida").length]];
@@ -258,6 +286,7 @@ else if(act==="edit"){if(!editable())throw Error("Somente leitura.");state.notic
 else if(act==="close"){state.draft=null;state.editing=null;render();}
 else if(act==="refresh")await refresh();
 else if(act==="test")test();
+else if(act==="team-refresh"){await loadTeam();render();}
 else if(act==="csv")exportCSV();
 else if(act==="delete")await deletion(id,"leads");
 else if(act==="del-evidence")await deletion(id,"evidences");
@@ -273,9 +302,10 @@ try{
 const f=e.target;
 if(f.id==="login-form"){
 if(!state.db)throw Error("Supabase ainda não configurado.");
-const d=new FormData(f),r=await state.db.auth.signInWithPassword({email:String(d.get("email")||""),password:String(d.get("password")||"")});
-if(r.error)throw r.error;state.user=r.data.user;state.demo=false;state.notice="";await load();render();
-}else if(f.id==="lead-form")await saveLead(f);
+const d=new FormData(f),r=await state.db.auth.signInWithPassword({email:loginEmail(d.get("email")),password:String(d.get("password")||"")});
+if(r.error)throw Error(r.error.code==="invalid_credentials"?"Usuário ou senha incorretos.":"Não foi possível entrar. Confira seu acesso e tente novamente.");state.user=r.data.user;state.demo=false;state.notice="";await load();render();
+}else if(f.id==="employee-form")await createEmployee(f);
+else if(f.id==="lead-form")await saveLead(f);
 else if(f.id==="stage-form")await saveStage(f);
 else if(f.id==="evidence-form")await addEvidence(f);
 else if(f.id==="activity-form")await addActivity(f);
