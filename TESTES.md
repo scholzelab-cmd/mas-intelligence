@@ -1,3 +1,21 @@
+# Atualização v1.4.0 — acesso da equipe (20/10/2026)
+
+- Login aceita e-mail administrativo ou usuário de funcionário, como arch01.
+- Área Equipe exclusiva do administrador: consulta acessos e cria funcionários com perfil editor; não permite criar administradores ou reutilizar uma conta existente.
+- Senha inicial definida diretamente pelo administrador no formulário, com12 a128 caracteres, maiúscula, minúscula e número. Não há senha padrão publicada.
+- Identidades internas usam o domínio reservado mas-crm.invalid, sem envio de e-mail. Recuperação de acesso depende do administrador no Supabase; não há recuperação automática por e-mail para essas identidades.
+- Função manage-employees ativa no Supabase, com verificação JWT e conferência de usuário/organização/perfil no servidor. Chave administrativa somente no ambiente da função, nunca no frontend.
+- Guia de uso na aplicação para cadastro, fontes, funil, histórico, CSV e limites de qualificação.
+- Supabase JS fixado na versão2.118.0, confirmada no CDN durante esta atualização.
+- Testes:74 core +6 sessão +12 servidor de equipe +10 interface de equipe =102 verificações locais aprovadas. Os22 novos usam respostas simuladas; não substituem criação/login de funcionário reais.
+- Endpoint real sem autenticação negado com HTTP401. Criação e login reais de arch01 ainda precisam ser concluídos e testados; não considerar a conta existente apenas pelo formulário estar disponível.
+- Base privada:100 empresas,125 evidências,197 atividades;3 verificadas e97 identificadas sem score. Somente25 revisões conferidas diretamente pelo Work;72 notas do Sherlock A CONFERIR. Nenhuma abordagem realizada.
+- WhatsApp fora do escopo desta etapa; abertura manual anterior preservada, sem API/bot.
+
+As seções abaixo são histórico; esta seção substitui os estados anteriores nos pontos atualizados. Commit e deploy precisam ser conferidos na entrega. Não declarar homologação integral enquanto os testes reais pendentes não forem concluídos.
+
+---
+
 # Reteste v1.3.1 — 20/10/2026
 
 - Núcleo: 74 PASS; sessão simulada: 6 PASS. Total 80 verificações locais, sem equivalência a 80 testes ponta a ponta.
