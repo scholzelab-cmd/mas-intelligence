@@ -1,3 +1,17 @@
+# Reteste v1.3.1 — 20/10/2026
+
+- Núcleo: 74 PASS; sessão simulada: 6 PASS. Total 80 verificações locais, sem equivalência a 80 testes ponta a ponta.
+- Três novas verificações: editor edita sem botão de exclusão, viewer sem gravação, admin com exclusão.
+- CSV: parser independente leu o exportador real com 100 casos fictícios e com 100 registros do backup privado. Aprovados 21 campos únicos, quantidade, UTF-8/BOM e preservação de conteúdo/score. Download no navegador novamente inconclusivo. Excel/LibreOffice não executados.
+- Recuperação aplicacional: cinco tabelas exportadas para JSON privado e restauradas em tabelas temporárias PostgreSQL. Comparação integral de linhas, campos, scores e vínculos: PASS. Zero tabelas QA remanescentes; produção intacta. Não inclui restauração de contas Auth, senhas, configuração de projeto ou segredos.
+- Banco mantém 100 leads. Novas revisões documentais: 25 fontes e 25 notas, sem pontuar identificadas nem simular contato.
+- Revisão de segurança manteve aviso de proteção de senhas vazadas. Recurso exige Pro ou superior; plano Free preservado.
+- Pendentes: CRUD autenticado completo pela UI, sessão revogada/expirada e perfis reais pela UI/Auth; login do proprietário necessário. Teste físico e API/bot WhatsApp também não executados.
+
+As seções abaixo são histórico; estados e contagens desta seção prevalecem.
+
+---
+
 # Atualização de testes v1.3.0
 
 - node tests/core.test.cjs: 71 PASS, incluindo 11 novos testes WhatsApp.
