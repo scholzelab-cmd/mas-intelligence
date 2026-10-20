@@ -204,7 +204,8 @@ state.editing=null;state.draft=null;state.selected=id;state.view="dossier";note(
 async function saveStage(f){
 const x=state.leads.find(l=>l.id===state.selected),v=String(new FormData(f).get("stage"));
 if(!x||!STAGES.some(s=>s[0]===v)||x.commercial_status===v)return;
-if(!state.demo&&!confirm("Confirmar mudança de etapa baseada em uma interação comercial real?"))return;
+const interaction=["contatada","respondeu","reuniao","proposta","negociacao","convertida"].includes(v);
+if(!state.demo&&interaction&&!confirm("Confirmar etapa baseada em interação comercial real? Nenhuma mensagem será enviada pelo CRM."))return;
 if(state.demo){x.commercial_status=v;state.activities.unshift({id:uid(),lead_id:x.id,type:"nota",description:"Etapa: "+label(STAGES,v),created_at:new Date().toISOString()});}
 else{
 if(!editable())throw Error("Somente leitura.");
