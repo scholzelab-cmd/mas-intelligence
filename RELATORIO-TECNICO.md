@@ -1,3 +1,21 @@
+# Reteste v1.3.1 — 20/10/2026
+
+- Ajuste da interface: somente admin/demo recebe exclusão de lead. O banco já negava a editor; agora a interface corresponde à permissão. Três testes novos aprovados, 74 core + 6 sessão = 80 locais.
+- Novo tests/csv_roundtrip.py usa o exportador real e o parser CSV independente do Python. Duas execuções aprovadas: 100 registros fictícios difíceis e 100 reais em fotografia privada; 21 campos, BOM, acentos, aspas, quebras, proteção de fórmula e scores conferidos. Download pelo navegador continua inconclusivo; não houve abertura em Excel.
+- Backup de workspaces, workspace_members, leads, evidences, activities exportado sem credenciais Auth. Recuperação em tabelas temporárias passou comparação integral do JSON, constraints e vínculos. Tabelas QA removidas no commit; 100 leads originais intactos. Migração de QA qa_application_backup_recovery_roundtrip registrada, sem alteração de tabela persistente. Restauração completa de servidor/projeto/Auth ainda pendente.
+- Colaboração na conversa existente do Sherlock retomada e respostas de 10 + 15 + 24 empresas de Joinville preservadas privadamente. Work conferiu fontes corporativas e registrou as 25 primeiras revisões com autoria real, sem promover status nem alterar scores. Fontes indisponíveis/alertas secundários registrados como indício ou não verificado. O lote de 24 ainda exige consolidação no CRM.
+- Fonte corporativa foi priorizada sobre telefone antigo de diretório: Roma ganhou canal geral completo publicado; não houve acréscimo de dígitos por suposição. Canais de fornecedores de Henz/Halsten/Top HD/Viplan/Vanguard separados de comprovação de contratação audiovisual.
+- Aviso Supabase: proteção contra senhas vazadas desativada. Documentação confirma disponibilidade em Pro ou superior; nenhum upgrade contratado. https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- Verificação do changelog Supabase: mudança futura de cifras TLS antigas não altera o frontend Chrome atual. Não testar dispositivos legados como se já estivessem homologados.
+- A interface autenticada está no login. Não foi criada senha nem extraído token para contornar o acesso; novos testes completos de cadastro/exclusão/sessão via UI dependem de login. SQL/RLS e testes locais permanecem distintos dos testes ponta a ponta.
+- Escrita GitHub novamente retornou403; editor web utilizado. Erros intermitentes de controle do navegador foram tratados sem criar conversa substituta do Sherlock nem reenviar cegamente mensagens.
+
+Não considerar o CRM 100% homologado: permanecem CSV no navegador/Excel, CRUD autenticado completo, expiração/revogação e contas por perfil via UI, recuperação completa de projeto, aparelhos físicos e API/bot oficial. A base de100 é pesquisa, não100 oportunidades qualificadas. Nenhuma abordagem realizada.
+
+As seções abaixo são histórico e ficam substituídas nos pontos atualizados acima. Commit/deploy final constam da entrega; não presumir publicação apenas por arquivo local.
+
+---
+
 # Atualização v1.3.0 — 19/10/2026
 
 Esta seção substitui os estados anteriores, preservados abaixo como histórico.
