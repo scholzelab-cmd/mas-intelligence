@@ -1,3 +1,45 @@
+# Atualização operacional — v1.4.1 — 21/10/2026
+
+Esta seção substitui os estados históricos abaixo quando houver divergência.
+
+CRM: https://scholzelab-cmd.github.io/mas-intelligence/
+Repositório: https://github.com/scholzelab-cmd/mas-intelligence
+Branch: main. Código e workflow publicados no commit 5eccdd54072565d1e4ba89495238fcf9fc55732d.
+Publicação confirmada success: https://github.com/scholzelab-cmd/mas-intelligence/actions/runs/39614386555
+
+## Alterações
+- Fundo branco/texto preto por padrão. Botão Modo noturno com fundo preto/texto branco, disponível no login e em todas as telas. Preferência salva no navegador; operação continua se armazenamento estiver bloqueado.
+- Contraste de campos, botões, modal, funil, avisos e cartões ajustado. Foco de teclado visível e aria-pressed no botão.
+- Arquivos modificados: index.html e styles.css. Novo .github/workflows/static.yml.
+- GitHub Actions estava desativado. Reativado e Pages configurado para GitHub Actions. O fluxo testa sintaxe, quatro suítes e CSV antes de publicar somente index.html,styles.css,app.js,config.js,.nojekyll.
+- Auth, RLS e lógica comercial preservados. Nenhuma credencial nova no repositório.
+
+## Testes executados e aprovados
+- 102 verificações nas quatro suítes locais (74 core,6 sessão,12 servidor de equipe,10 UI de equipe), repetidas nesta entrega; também executadas no fluxo de publicação aprovado.
+- Parser CSV independente:100 registros fictícios difíceis,21 colunas,UTF-8/BOM e preservação de conteúdo.
+- 8 verificações adicionais do tema em simulação: padrão claro,troca,persistência,ARIA,meta theme-color,armazenamento bloqueado e sincronização. Não confundir com E2E.
+- Site real: claro rgb(255,255,255)/texto rgb(0,0,0); noturno rgb(0,0,0)/texto rgb(255,255,255); persistência escura após recarga.
+- Mobile390x844: dashboard sem overflow; página375px,modal361px. Viewport restaurado.
+- Login/logout/relogin real arch01 e recarga autenticada. Funil carregado; diagnóstico12/12. Console consultado:sem warn/error.
+- arch01 criado e confirmado com perfil editor na MAS; edição real do QA persistida no PostgreSQL em20/10.
+- Teste SQL com identidade do editor real:INSERT permitido na MAS e revertido por ROLLBACK; zero registros transitórios restantes. Criação de vínculo de acesso bloqueada. Visibilidade limitada à MAS no teste; não substitui nova organização via Auth E2E.
+
+## Limitações e pendências reais
+Nenhuma falha nos testes acima. Não executados/conclusão pendente: cadastro completo de novo lead por editor via UI,viewer com login real,negação de exclusão pela API com sessão editor,revogação/expiração real de sessão,CSV baixado/aberto no Excel,restauração integral incluindo Auth,aparelho físico e múltiplos navegadores. Testes prévios simulados/SQL não substituem esses cenários.
+A limpeza do QA foi recusada anteriormente pela ferramenta sem motivo detalhado e não foi repetida. QA MAS INTERNO20261020 — FICTÍCIO continua na base; não é prospecto.
+Base100 empresas pesquisadas+1QA;3verificadas e97identificadas sem score.25revisões conferidas pelo Work;72pesquisas Sherlock a conferir. Não são100 oportunidades qualificadas. Nenhuma abordagem enviada.
+Supabase real ativo,signup público desativado,RLS ativa. Proteção contra senha vazada depende de recurso pago ainda não contratado. WhatsApp automático fora do escopo.
+Pode iniciar uso acompanhado com usuário individual; não declarar homologação integral.
+
+## PROMPT DE ATUALIZAÇÃO — SHERLOCK PROSPECTADOR
+MAS Intelligence CRM — Sherlock Prospectador v1.4.1. Tecnologias:HTML,CSS,JavaScript,Supabase JS2.118.0,Auth,PostgreSQL/RLS,Edge Function e GitHub Pages/Actions.
+Estrutura preservada:index.html,styles.css,app.js,config.js,.nojekyll,README.md,TESTES.md,RELATORIO-TECNICO.md,WHATSAPP.md;supabase/schema.sql,supabase/migrations/001_lead_fields.sql,supabase/functions/manage-employees/index.ts e handler.mjs;tests/core.test.cjs,session.test.cjs,rls.sql,csv_roundtrip.py,employees.test.mjs,employee-ui.test.cjs;novo .github/workflows/static.yml.
+Futuras alterações:conferir main atual,não publicar dados privados,executar testes locais,conferir o fluxo Testar e publicar MAS CRM e verificar a UI pública. Não reaplicar schema.sql no banco existente; usar migrações específicas.
+Prioridades MAS:uso acompanhado,homologação restante,limpeza do QA após liberação específica,qualificação documental das72pesquisas e usuários individuais para a equipe.
+Sherlock Prospectador, considere este relatório como o estado técnico atualizado do MAS Intelligence CRM nesta conversa. Utilize os links, arquivos, testes e informações aqui descritos para orientar os próximos desenvolvimentos. Não presuma que alguma etapa foi concluída se estiver identificada como pendente. Continue atuando exclusivamente na prospecção B2B da MAS e na evolução do CRM correspondente.
+
+---
+
 # Conferência operacional v1.4.0 — 20/10/2026
 
 Aplicação: https://scholzelab-cmd.github.io/mas-intelligence/
