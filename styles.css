@@ -3,3 +3,25 @@
 .dossier-grid{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
 .detail a,.ticket strong,h1{overflow-wrap:anywhere}
 @media(max-width:620px){.dossier-grid{grid-template-columns:1fr}.topbar{flex-wrap:wrap}.topbar>.row{width:100%}.nav{flex-direction:column;gap:2px}.nav span:last-child{display:block;font-size:8px}.content{padding:10px}.leadrow:not(.tablewrap .leadrow){grid-template-columns:minmax(0,1fr) auto}.leadrow:not(.tablewrap .leadrow)>small{grid-column:1}.modal-back{padding:7px}}
+
+/* v1.4.1: aparência clara por padrão e modo noturno persistente. */
+:root{color-scheme:light;--bg:#fff;--sidebar:#f5f5f5;--panel:#fff;--line:#ccc;--text:#000;--muted:#444;--accent:#005ea8;--green:#17633e;--red:#a0172b;--soft:#f3f3f3;--link:#005498}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#000;--sidebar:#111;--panel:#111;--line:#555;--text:#fff;--muted:#ccc;--accent:#8acbff;--green:#9ae8bb;--red:#ffb3bf;--soft:#222;--link:#9bd3ff}
+a{color:var(--link)}
+.theme-toolbar{display:flex;justify-content:flex-end;align-items:center;min-height:46px;padding:7px 18px;background:var(--bg);border-bottom:1px solid var(--line)}
+.app-layout,.signin{min-height:calc(100vh - 46px)}
+.topbar,.signin,.signin-box,.modal,.input,.lane,.ticket{background:var(--panel);color:var(--text)}
+.brand small,.nav,.panel p,.field label,.ticket small,.form-section{color:var(--text)}
+.brand-icon{background:var(--soft);color:var(--text);border-color:var(--line)}
+.nav.active,.nav:hover{background:var(--text);color:var(--bg)}
+.btn,.btn.primary,.btn.outline{background:var(--panel);border-color:var(--muted);color:var(--text)}
+.btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn.danger{background:var(--panel);color:var(--red);border-color:var(--red)}
+.btn:hover{filter:none;outline:2px solid var(--accent);outline-offset:2px}
+button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.banner,.banner.error,.pill,.pill.blue,.pill.green,.pill.amber{background:var(--soft);color:var(--text);border:1px solid var(--line)}
+.banner.error{border-color:var(--red);color:var(--red)}
+.input,.modal,.modal-head,.modal-foot,.signin-box,.ticket{border-color:var(--line)}
+.track{background:var(--soft)}.track-fill{background:var(--accent)}
+.grid.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+@media(max-width:620px){.grid.two{grid-template-columns:1fr}.theme-toolbar{padding:7px 12px}}
