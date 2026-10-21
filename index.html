@@ -3,17 +3,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1928">
+  <meta name="theme-color" content="#ffffff">
   <meta name="description" content="MAS Intelligence CRM — gestão de prospecção B2B.">
+  <script>
+    (function(){
+      function apply(theme){
+        document.documentElement.dataset.theme=theme;
+        document.querySelector('meta[name="theme-color"]').content=theme==='dark'?'#000000':'#ffffff';
+        var toggle=document.getElementById('theme-toggle');
+        if(toggle){toggle.setAttribute('aria-pressed',String(theme==='dark'));toggle.textContent=theme==='dark'?'☀ Modo claro':'☾ Modo noturno';}
+      }
+      var theme='light';
+      try{if(localStorage.getItem('mas-crm-theme')==='dark')theme='dark';}catch(e){}
+      apply(theme);
+      document.addEventListener('DOMContentLoaded',function(){
+        apply(theme);
+        document.getElementById('theme-toggle').addEventListener('click',function(){
+          theme=document.documentElement.dataset.theme==='dark'?'light':'dark';apply(theme);
+          try{localStorage.setItem('mas-crm-theme',theme);}catch(e){}
+        });
+        window.addEventListener('storage',function(event){if(event.key==='mas-crm-theme')apply(event.newValue==='dark'?'dark':'light');});
+      });
+    })();
+  </script>
   <title>MAS Intelligence | CRM Sherlock</title>
-  <link rel="stylesheet" href="./styles.css?v=1.4.0.1">
+  <link rel="stylesheet" href="./styles.css?v=1.4.1">
 </head>
 <body>
+  <div class="theme-toolbar" aria-label="Aparência"><button type="button" id="theme-toggle" class="btn small" aria-pressed="false">☾ Modo noturno</button></div>
   <div id="app" aria-live="polite">
     <div class="loading">Inicializando MAS Intelligence...</div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-  <script src="./config.js?v=1.4.0.1"></script>
-  <script defer src="./app.js?v=1.4.0.1"></script>
+  <script src="./config.js?v=1.4.1"></script>
+  <script defer src="./app.js?v=1.4.1"></script>
 </body>
 </html>
