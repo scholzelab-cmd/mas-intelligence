@@ -22,7 +22,7 @@ jobs:
       - name: Testes do CRM
         run: |
           node --check app.js
-          node --test tests/core.test.cjs tests/session.test.cjs tests/employees.test.mjs tests/employee-ui.test.cjs
+          node --test tests/core.test.cjs tests/session.test.cjs tests/employees.test.mjs tests/employee-ui.test.cjs tests/operations.test.cjs
           python3 tests/csv_roundtrip.py
       - name: Preparar frontend
         run: |
