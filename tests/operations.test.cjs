@@ -1,0 +1,24 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
+const context={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,crypto:require('node:crypto').webcrypto};
+vm.createContext(context);
+vm.runInContext(source.replace('init();\n})();','window.api={state,blank,readyLead,visibleLeads,businessDossier,commercialActivity,whatsappPanel,whatsappMessage,dashboard,navItems};\n})();'),context);
+const a=context.window.api;a.state.demo=false;
+const lead={...a.blank(),id:'1',company:'Empresa & Filhos',verification_status:'verificada',contact_phone:'(47) 99999-1234'};
+let count=0;function test(name,fn){fn();count++;console.log('PASS '+name)}
+test('telefone corporativo habilita fila de contato',()=>assert.ok(a.readyLead(lead)));
+test('sem canal fica pendente',()=>assert.ok(!a.readyLead({...lead,contact_phone:''})));
+test('identidade não verificada fica pendente mesmo com telefone',()=>assert.ok(!a.readyLead({...lead,verification_status:'identificada'})));
+test('bloqueio e QA não entram na fila',()=>{for(const patch of [{commercial_status:'nao_contatar'},{contact_channel:'FORA DA FILA100'},{company:'QA MAS INTERNO 20261020'}])assert.ok(!a.readyLead({...lead,...patch}))});
+test('formulário sem URL não habilita fila',()=>assert.ok(!a.readyLead({...lead,contact_phone:'',contact_channel:'Formulário'})));
+test('formulário corporativo com URL é alternativa ao telefone',()=>assert.ok(a.readyLead({...lead,contact_phone:'',contact_channel:'Formulário corporativo',website:'https://example.com/contato'})));
+a.state.leads=[lead,{...lead,id:'2',company:'Pendente',contact_phone:''}];
+test('lista padrão omite pendente',()=>assert.equal(a.visibleLeads().length,1));
+test('pendência permanece acessível',()=>{a.state.leadScope='pending';assert.equal(a.visibleLeads()[0].id,'2');a.state.leadScope='ready'});
+test('busca limita a lista exportável',()=>{a.state.filter='inexistente';assert.equal(a.visibleLeads().length,0);a.state.filter=''});
+test('dashboard não promove cadastro sem canal',()=>assert.ok(!a.dashboard().includes('Pendente')));
+test('resumo mantém fatos e retira bastidores antigos',()=>{const text=a.businessDossier({...lead,dossier:'[FILA100]\\r\\nConstatação: Edifício publicado.\\r\\nHipótese MAS: vídeo.\\r\\n[HISTÓRICO ANTERIOR]\\r\\nREVISÃO WORK Sherlock'});assert.ok(text.includes('Edifício publicado'));assert.ok(!/WORK|Sherlock|FILA100/.test(text))});
+test('nota comercial é preservada e importação fica fora da timeline',()=>{assert.ok(a.commercialActivity({description:'Cliente pediu proposta na terça-feira'}));assert.ok(!a.commercialActivity({description:'Revisão Work / Sherlock FILA100'}))});
+test('WhatsApp inclui empresa e mensagem íntegra codificada',()=>{const html=a.whatsappPanel(lead);const href=html.match(/href="([^"]+)"/)[1].replace(/&amp;/g,'&');const url=new URL(href);assert.equal(url.pathname,'/5547999991234');assert.equal(url.searchParams.get('text'),a.whatsappMessage(lead));assert.ok(html.includes('Empresa &amp; Filhos'))});
+test('funcionário não vê diagnóstico técnico',()=>{a.state.role='editor';assert.ok(!a.navItems().some(x=>x[0]==='tests'));a.state.role='admin';assert.ok(a.navItems().some(x=>x[0]==='tests'))});
+console.log('TOTAL '+count+' PASS');
