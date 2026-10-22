@@ -1,3 +1,22 @@
+# MAS Intelligence CRM v1.4.3 —22/10/2026
+
+Frontend: https://scholzelab-cmd.github.io/mas-intelligence/ · branch `main`.
+
+- Interface comercial clara/escura, sem referências aos agentes nas telas de operação. Diagnóstico técnico apenas na navegação administrativa.
+- Dashboard e lista Para contato excluem cadastros incompletos e em revisão; Pendências e Todos preservam o acesso aos registros.
+- Dossiês exibem resumo de fatos e ressalvas, fontes e histórico comercial. Notas internas e auditoria legada são preservadas, com apresentação separada; edições preservam o histórico original.
+- WhatsApp manual com mensagem preenchida e número brasileiro validado sintaticamente. Revisão e envio ficam a cargo do funcionário; não há bot, API ou garantia de conta WhatsApp.
+- CSV respeita a lista e a busca. Verificações locais:120 casos nomeados e parser independente; exportação real conferida com100 empresas atuais e21 colunas.
+- GitHub Actions executa as cinco suítes, valida JavaScript e CSV antes de publicar apenas os arquivos do frontend.
+- Supabase Auth/PostgreSQL/RLS ativos. Sessão real de editor utilizada. Conferência SQL em leitura: editor viu124 registros de uma organização, identidade sem vínculo viu zero, leitura anônima foi negada. Outros13 cenários de RLS/gravação passaram com fixtures temporárias e rollback; o perfil editor e os124 registros foram confirmados após a reversão. Não equivale a teste completo de todas as permissões por API e dispositivo.
+- Base comercial privada:124 registros;100 na fila de primeiro contato,24 fora dessa fila (inclui um registro QA fictício). Os100 possuem fonte Maps e canal público.89 registros anteriores foram reconferidos,11 casos sem correspondência segura ficaram pendentes e11 novos foram pesquisados inicialmente no Maps e depois na web. Não são100 oportunidades qualificadas ou telefones testados por ligação.
+- Pendências de homologação: sessão revogada na interface, perfil viewer real e gravações negadas via API, restauração integral de backup, Excel e dispositivos físicos. Não declarar homologação integral concluída.
+- Nenhuma senha padrão ou credencial administrativa deve ser publicada. Identidades internas de funcionários dependem do administrador para recuperação.
+
+As seções abaixo são histórico e podem conter estados anteriores. Esta seção prevalece para a versão atual.
+
+---
+
 # Atualização v1.4.0 — acesso da equipe (20/10/2026)
 
 - Login aceita e-mail administrativo ou usuário de funcionário, como arch01.
