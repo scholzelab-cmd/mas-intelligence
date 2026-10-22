@@ -60,8 +60,46 @@ function readyLead(x){
 if(state.demo)return true;
 return verified(x)&&!['nao_contatar','perdida'].includes(x.commercial_status)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&!!(whatsappNumber(x.contact_phone)||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.contact_email||'')||(/formul[aá]rio/i.test(x.contact_channel||'')&&safeURL(x.website||x.source_url)));
 }
-function visibleLeads(){return state.leads.filter(x=>(state.leadScope==='all'||(state.leadScope==='pending'?!readyLead(x):readyLead(x)))&&norm(x.company+' '+x.city+' '+x.project).includes(norm(state.filter))).sort((a,b)=>(score(b)??-1)-(score(a)??-1));}
-function commercialActivity(a){return !/\bsherlock\b|revis[aã]o work|FILA100|revis[aã]o documental|importa[cç][aã]o|recalibr|auditoria|revalida[cç][aã]o/i.test(a.description||'');}
+
+const FOLLOWUP_MARKER='[MAS_ACOMPANHAMENTO_V1]';
+const FOLLOWUP_ACTIONS=[['comentario','Comentário'],['contato','Contato feito'],['apresentacao','Apresentação do negócio'],['negociacao','Em negociação'],['retorno','Retorno / próxima ação']];
+const PRIORITIES=[['normal','Normal'],['alta','Alta'],['urgente','Urgente']];
+function followupData(a){
+if(!String(a.description||'').startsWith(FOLLOWUP_MARKER))return null;
+try{const d=JSON.parse(a.description.slice(FOLLOWUP_MARKER.length));return d&&FOLLOWUP_ACTIONS.some(x=>x[0]===d.action)&&PRIORITIES.some(x=>x[0]===d.priority)&&typeof d.comment==='string'?d:null}catch{return null}
+}
+function leadPriority(x){
+const records=state.activities.filter(a=>a.lead_id===x.id&&followupData(a)).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))||String(b.id||'').localeCompare(String(a.id||'')));
+return records.length?followupData(records[0]).priority:'normal';
+}
+function priorityBadge(x){const p=leadPriority(x);return p==='normal'?'':pill('★ Prioridade '+label(PRIORITIES,p),'amber');}
+function compareLeads(a,b){const ranks={normal:0,alta:1,urgente:2};return ranks[leadPriority(b)]-ranks[leadPriority(a)]||(score(b)??-1)-(score(a)??-1);}
+function activityHTML(a){
+const d=followupData(a),author=a.author_id?(a.author_id===state.user?.id?(state.user?.user_metadata?.username||'Você'):'Funcionário '+a.author_id.slice(0,8)):'Registro anterior';
+return '<div class="event"><strong>'+escape(d?label(FOLLOWUP_ACTIONS,d.action):a.description)+'</strong>'+(d?'<p style="white-space:pre-wrap;overflow-wrap:anywhere">'+escape(d.comment)+'</p>'+pill('Prioridade '+label(PRIORITIES,d.priority),d.priority==='normal'?'':'amber'):'')+'<small>'+escape(author)+' · '+escape(new Date(a.created_at).toLocaleString('pt-BR'))+'</small></div>';
+}
+function followupPage(){
+const x=state.leads.find(l=>l.id===state.selected)||state.leads.find(readyLead)||state.leads[0];
+if(!x)return '<div class="panel">Cadastre um lead para iniciar o acompanhamento.</div>';
+state.selected=x.id;
+const acts=state.activities.filter(a=>a.lead_id===x.id&&commercialActivity(a)).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)));
+const list=state.leads.filter(l=>!/^QA MAS INTERNO/i.test(l.company||'')||l.id===x.id).sort(compareLeads);
+return '<div class="panel">'+select('followup_lead','Empresa em acompanhamento',x.id,list.map(l=>[l.id,l.company]))+'</div><div class="row between" style="margin:16px 0"><div><h2>'+escape(x.company)+'</h2>'+priorityBadge(x)+pill(label(STAGES,x.commercial_status))+'</div>'+button('Ver dossiê','open',x.id,'small')+'</div><div class="grid2"><section class="panel"><h2>Atualizar acompanhamento</h2>'+(editable()?'<form id="followup-form">'+select('action','O que foi feito','comentario',FOLLOWUP_ACTIONS)+area('comment','Comentário e resultado','')+select('priority','Prioridade de atendimento',leadPriority(x),PRIORITIES)+'<p class="muted">Registre somente ações realizadas. A prioridade destaca a empresa nas listas. Para mudar a etapa do funil, use o campo abaixo.</p><button class="btn primary" type="submit">Salvar atualização</button></form><hr><form id="stage-form">'+select('stage','Etapa do funil',x.commercial_status,STAGES)+'<button class="btn" type="submit">Salvar etapa</button></form>':'<p>Seu acesso permite consultar o acompanhamento.</p>')+'</section><section class="panel"><h2>Comentários e atividades</h2><div class="timeline">'+(acts.length?acts.map(activityHTML).join(''):'<p>Nenhuma atualização registrada.</p>')+'</div></section></div>';
+}
+async function saveFollowup(f){
+if(!editable()||(!state.demo&&!state.workspace))throw Error('Sem permissão para atualizar este lead.');
+const x=state.leads.find(l=>l.id===state.selected);if(!x)throw Error('Lead não encontrado.');
+const d=new FormData(f),entry={action:String(d.get('action')||''),priority:String(d.get('priority')||''),comment:String(d.get('comment')||'').trim()};
+if(!FOLLOWUP_ACTIONS.some(x=>x[0]===entry.action)||!PRIORITIES.some(x=>x[0]===entry.priority))throw Error('Escolha ação e prioridade válidas.');
+if(!entry.comment||entry.comment.length>5000)throw Error('Informe um comentário de até 5000 caracteres.');
+const payload={lead_id:x.id,type:'nota',description:FOLLOWUP_MARKER+JSON.stringify(entry)};
+if(state.demo)state.activities.unshift({...payload,id:uid(),created_at:new Date().toISOString()});
+else{const r=await state.db.from('activities').insert({...payload,workspace_id:state.workspace}).select('id');if(r.error)throw r.error;if(!r.data?.length)throw Error('Atualização não confirmada pelo banco.');await load();}
+note('Acompanhamento salvo. Nenhuma mensagem foi enviada.');
+}
+
+function visibleLeads(){return state.leads.filter(x=>(state.leadScope==='all'||(state.leadScope==='pending'?!readyLead(x):readyLead(x)))&&norm(x.company+' '+x.city+' '+x.project).includes(norm(state.filter))).sort(compareLeads);}
+function commercialActivity(a){if(followupData(a))return true;return !/\bsherlock\b|revis[aã]o work|FILA100|revis[aã]o documental|importa[cç][aã]o|recalibr|auditoria|revalida[cç][aã]o/i.test(a.description||'');}
 function businessDossier(x){
 const raw=String(x.dossier||'').replace(/\\r\\n|\\n/g,'\n');
 if(!/\bsherlock\b|revis[aã]o work|FILA100|HISTÓRICO ANTERIOR/i.test(raw))return raw;
@@ -75,7 +113,7 @@ return facts.length?facts.join('\n'):'Cadastro em revisão. Consulte as fontes e
 
 function level(x){const n=score(x);return n===null?["Sem score",""]:n>=80?["Muito alta","green"]:n>=60?["Alta","blue"]:n>=40?["Moderada","amber"]:["Baixa",""]}
 function editable(){return state.demo||["admin","editor"].includes(state.role)}
-function navItems(){return [["dashboard","◫","Dashboard"],["leads","▤","Leads"],["pipeline","▦","Funil"],["dossier","◇","Dossiês"],["guide","?","Guia de uso"],...(state.role==="admin"?[["tests","✓","Diagnóstico"],["team","♙","Equipe"]]:[])]}
+function navItems(){return [["dashboard","◫","Dashboard"],["leads","▤","Leads"],["pipeline","▦","Funil"],["followup","✎","Acompanhamento"],["dossier","◇","Dossiês"],["guide","?","Guia de uso"],...(state.role==="admin"?[["tests","✓","Diagnóstico"],["team","♙","Equipe"]]:[])]}
 function validate(x){
 if(!x.company.trim()||!x.city.trim()||!/^[A-Z]{2}$/.test(x.uf||""))return"Empresa, cidade e UF de duas letras são obrigatórios.";
 for(const [k,max] of Object.entries(caps)){const n=Number(x[k]);if(!Number.isInteger(n)||n<0||n>max)return"Score inválido: "+k;}
@@ -123,7 +161,7 @@ nav.map(x=>'<button class="nav '+(state.view===x[0]?"active":"")+'" data-action=
 '<div class="sidebar-foot">'+escape(state.demo?"DEMONSTRAÇÃO":"ÁREA PROTEGIDA")+'<div style="margin-top:12px">'+button(state.demo&&connected?"Voltar ao login":state.demo?"Reiniciar demo":"Sair",state.demo?(connected?"back-login":"reset-demo"):"logout","","small")+'</div></div></aside>'+
 '<div class="main"><header class="topbar"><div><h1>'+escape(top)+'</h1><small>MAS · Produção Visual e Audiovisual</small></div><div class="row">'+pill(state.demo?"Dados fictícios":state.role==="viewer"?"Somente leitura":state.user?.user_metadata?.username||"Conta autorizada",state.demo?"amber":"green")+(state.demo&&connected?button("Acessar CRM","back-login","","small"):"")+(editable()?button("+ Novo lead","new","","primary"):"")+'</div></header><main class="content">'+(state.notice?'<div class="banner '+(state.error?"error":"")+'">'+escape(state.notice)+'</div>':"")+(state.workspace===null&&!state.demo?'<div class="banner error">Associe este usuário a um workspace no Supabase para usar o CRM.</div>':"")+page()+'</main></div></div>'+(state.editing!==null?editor():"");
 }
-function page(){if(state.view==="team")return teamPage();if(state.view==="guide")return guidePage();return state.view==="leads"?leadsPage():state.view==="pipeline"?pipelinePage():state.view==="dossier"?dossierPage():state.view==="tests"?testPage():dashboard()}
+function page(){if(state.view==="followup")return followupPage();if(state.view==="team")return teamPage();if(state.view==="guide")return guidePage();return state.view==="leads"?leadsPage():state.view==="pipeline"?pipelinePage():state.view==="dossier"?dossierPage():state.view==="tests"?testPage():dashboard()}
 function loginEmail(value){
 const text=String(value||" ").trim().toLowerCase();
 if(text.includes("@"))return text;
@@ -153,31 +191,31 @@ const result=await teamRequest({action:"create",username,password});
 form.reset();await loadTeam();state.notice=result.message||"Funcionário criado.";state.error=false;render();
 }
 function dashboard(){
-const l=state.leads.filter(readyLead).sort((a,b)=>(score(b)??-1)-(score(a)??-1));
+const l=state.leads.filter(readyLead).sort(compareLeads);
 const k=[["Empresas",l.length],["Verificadas",l.filter(verified).length],["Prioridade alta+",l.filter(x=>score(x)!==null&&score(x)>=60).length],["Reuniões",l.filter(x=>x.commercial_status==="reuniao").length],["Propostas",l.filter(x=>x.commercial_status==="proposta").length],["Negociações",l.filter(x=>x.commercial_status==="negociacao").length],["Convertidas",l.filter(x=>x.commercial_status==="convertida").length]];
 return '<div class="banner">'+(state.demo?"Este é um ambiente demonstrativo com empresas inventadas. Cadastros não são compartilhados nem salvos.":"Sua carteira de prospecção e próximas ações comerciais.")+'</div><div class="metrics">'+k.map(x=>'<div class="metric"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join("")+'</div>'+
-'<div class="section"><h2>Empresas para contato</h2>'+button("Atualizar","refresh","","small")+'</div><div class="panel">'+(l.length?l.slice(0,8).map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong><small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Projeto pendente")+'</small></div><div>'+pill(label(VERIFY,x.verification_status))+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join(""):'<p class="muted">Nenhuma empresa cadastrada.</p>')+'</div><div class="grid2" style="margin-top:15px"><div class="panel"><h3>Critério de prioridade</h3><p>ICP 30 · Sinal 25 · Potencial 15 · Acesso 15 · Geografia 10 · Evidências 5.</p><p class="muted">Score só para empresas verificadas não descartadas. Score não equivale a interesse de compra.</p></div><div class="panel"><h3>Operação comercial</h3><p>Registre fontes específicas, datas, departamento comprador e próximos passos. Nenhuma comunicação é enviada automaticamente.</p></div></div>';
+'<div class="section"><h2>Empresas para contato</h2>'+button("Atualizar","refresh","","small")+'</div><div class="panel">'+(l.length?l.slice(0,8).map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Projeto pendente")+'</small></div><div>'+pill(label(VERIFY,x.verification_status))+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join(""):'<p class="muted">Nenhuma empresa cadastrada.</p>')+'</div><div class="grid2" style="margin-top:15px"><div class="panel"><h3>Critério de prioridade</h3><p>ICP 30 · Sinal 25 · Potencial 15 · Acesso 15 · Geografia 10 · Evidências 5.</p><p class="muted">Score só para empresas verificadas não descartadas. Score não equivale a interesse de compra.</p></div><div class="panel"><h3>Operação comercial</h3><p>Registre fontes específicas, datas, departamento comprador e próximos passos. Nenhuma comunicação é enviada automaticamente.</p></div></div>';
 }
 function leadsPage(){
 const list=visibleLeads();
 return '<div class="row" style="margin-bottom:14px">'+button('Para contato','scope','ready','small')+button('Pendências','scope','pending','small')+button('Todos','scope','all','small')+pill(state.leadScope==='pending'?'Pendências':state.leadScope==='all'?'Todos os cadastros':'Para contato')+'</div><div class="row between" style="margin-bottom:14px"><input id="search" class="input" style="max-width:360px;flex:1" placeholder="Buscar empresa, cidade ou empreendimento" value="'+escape(state.filter)+'"><div class="row">'+pill(list.length+" registros")+button("Exportar CSV","csv","","small")+'</div></div><div class="panel tablewrap"><div class="leadrow header"><span>Empresa</span><span>Estado</span><span>Score</span><span>Funil</span><span></span></div>'+
-(list.length?list.map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong><small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Não informado")+'</small></div><div>'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Dossiê","open",x.id,"small")+'</div>').join(""):'<p>Nenhuma empresa encontrada.</p>')+'</div>';
+(list.length?list.map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Não informado")+'</small></div><div>'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Dossiê","open",x.id,"small")+'</div>').join(""):'<p>Nenhuma empresa encontrada.</p>')+'</div>';
 }
 function pipelinePage(){
-return '<div class="banner">O funil reflete somente status comerciais registrados. Para mudar a etapa, abra o dossiê do lead.</div><div class="kanban">'+STAGES.map(st=>{const ls=state.leads.filter(x=>verified(x)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&x.commercial_status===st[0]);return '<div class="lane"><div class="lane-title">'+escape(st[1])+pill(ls.length)+'</div>'+ls.map(x=>'<div class="ticket"><strong>'+escape(x.company)+'</strong><small>'+escape(x.city)+' · Score: '+(score(x)??"—")+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join("")+'</div>'}).join("")+'</div>';
+return '<div class="banner">O funil reflete somente status comerciais registrados. Para mudar a etapa, abra o dossiê do lead.</div><div class="kanban">'+STAGES.map(st=>{const ls=state.leads.filter(x=>verified(x)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&x.commercial_status===st[0]);return '<div class="lane"><div class="lane-title">'+escape(st[1])+pill(ls.length)+'</div>'+ls.map(x=>'<div class="ticket"><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+' · Score: '+(score(x)??"—")+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join("")+'</div>'}).join("")+'</div>';
 }
 function dossierPage(){
 const x=state.leads.find(l=>l.id===state.selected)||state.leads.find(readyLead)||state.leads[0];if(x)state.selected=x.id;if(!x)return '<div class="panel">Cadastre um lead para criar um dossiê.</div>';
 const ev=state.evidences.filter(e=>e.lead_id===x.id),act=state.activities.filter(a=>a.lead_id===x.id&&commercialActivity(a)),s=score(x);
 const gr=[["ICP",["icp_sector","icp_use","icp_size","icp_model"],30],["Sinal",["signal_points"],25],["Potencial",["potential_scale","potential_repeat","potential_expansion"],15],["Acessibilidade",["access_points"],15],["Geografia",["geo_points"],10],["Evidências",["evidence_points"],5]];
-return '<div class="row between" style="margin-bottom:15px"><div><h1>'+escape(x.company)+'</h1><p class="muted">'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Sem empreendimento")+'</p><div class="row">'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+pill(label(TYPES,x.opportunity_type),"blue")+pill(label(STAGES,x.commercial_status))+'</div></div><div class="row">'+(editable()?button("Editar","edit",x.id,"small")+((state.demo||state.role==="admin")?button("Excluir","delete",x.id,"small danger"):""):"")+'</div></div>'+
+return '<div class="row between" style="margin-bottom:15px"><div><h1>'+escape(x.company)+'</h1>'+priorityBadge(x)+'<p class="muted">'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Sem empreendimento")+'</p><div class="row">'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+pill(label(TYPES,x.opportunity_type),"blue")+pill(label(STAGES,x.commercial_status))+'</div></div><div class="row">'+(button("Acompanhamento","followup",x.id,"small")+(editable()?button("Editar","edit",x.id,"small")+((state.demo||state.role==="admin")?button("Excluir","delete",x.id,"small danger"):""):""))+'</div></div>'+
 '<div class="grid2 dossier-grid"><div><div class="panel"><h2>Dossiê do empreendimento</h2>'+
 [["Segmento",x.segment],["Porte comprovado",x.company_size],["Estágio do projeto",x.project_stage],["Sinal / hipótese",x.signal],["Data do sinal",date(x.signal_date)],["Departamento comprador",x.buyer_department],["Próxima ação",/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')?'Confirmar identidade, atividade e contato corporativo antes de abordar.':x.next_action],["Resumo comercial",businessDossier(x)],["Canal público",/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')?'Não confirmado':x.contact_channel],["E-mail corporativo",x.contact_email],["Telefone corporativo",x.contact_phone],["Consulta da fonte",date(x.source_checked_at)]].map(y=>detail(y[0],y[1])).join("")+
 '<div class="detail"><small>Fonte principal</small><span>'+hlink(x.source_url)+'</span></div></div>'+
 '<div class="panel" style="margin-top:13px"><div class="row between"><h2>Fontes e evidências</h2>'+pill(ev.length+" fontes")+'</div><p class="muted">Cada evidência tem atributo, URL, data e classificação. Fontes não são confirmação de intenção de compra por si só.</p>'+
 ev.map(e=>'<div class="detail"><strong>'+escape(/sherlock|FILA100|revis[aã]o documental work/i.test(e.attribute_name)?'Verificação de atividade e contato':e.attribute_name)+'</strong> '+pill(e.evidence_status)+'<p>'+escape(String(e.finding||'').replace(/^Leitura documental pelo Work; n[aã]o houve contato\.\s*/i,'').replace(/^Fila100:\s*/i,''))+'</p><div>'+hlink(e.source_url)+'</div><small class="muted">Fato: '+date(e.event_date)+' · Consulta: '+date(e.checked_at)+'</small>'+(editable()?'<div style="margin-top:7px">'+button("Remover fonte","del-evidence",e.id,"small danger")+'</div>':"")+'</div>').join("")+
 (editable()?'<form id="evidence-form"><div class="form-section">Nova evidência</div><div class="grid2">'+field("attribute_name","Atributo (atividade, porte, projeto...)","")+select("evidence_status","Classificação","confirmado",[["confirmado","Confirmado"],["indicio","Indício"],["hipotese","Hipótese"],["nao_verificado","Não verificado"]])+field("source_url","URL específica HTTPS","","url")+field("event_date","Data do fato","","date")+'</div><div style="margin:10px 0">'+area("finding","O que a fonte comprova","")+'</div><button class="btn primary" type="submit">Registrar evidência</button></form>':"")+'</div>'+
-'<div class="panel" style="margin-top:13px"><h2>Histórico comercial</h2><div class="timeline">'+(act.length?act.map(a=>'<div class="event"><strong>'+escape(a.description)+'</strong><small>'+escape(a.type)+' · '+date(a.created_at)+'</small></div>').join(""):'<p class="muted">Sem atividades.</p>')+'</div>'+
+'<div class="panel" style="margin-top:13px"><h2>Histórico comercial</h2><div class="timeline">'+(act.length?act.map(activityHTML).join(""):'<p class="muted">Sem atividades.</p>')+'</div>'+
 (editable()?'<form id="activity-form"><div class="grid2">'+select("type","Tipo","nota",[["nota","Nota"],["evidencia","Pesquisa"],["contato","Contato realizado"],["reuniao","Reunião"],["proposta","Proposta"]])+field("description","Descrição do ocorrido","")+'</div><button class="btn primary" style="margin-top:10px" type="submit">Adicionar registro</button></form>':"")+'</div></div>'+
 '<div><div class="panel"><h2>Prioridade comercial</h2><div class="row between"><strong style="font-size:31px">'+(s??"—")+' <small class="muted" style="font-size:12px">/100</small></strong>'+pill(level(x)[0],level(x)[1])+'</div>'+(s===null?'<p class="muted">Pontuação não publicada: identidade ainda não verificada ou lead descartado.</p>':"")+
 gr.map(g=>{const n=g[1].reduce((v,k)=>v+Number(x[k]||0),0);return '<div style="margin-top:14px"><div class="row between" style="font-size:12px;margin-bottom:6px"><span>'+g[0]+'</span><strong>'+n+'/'+g[2]+'</strong></div><div class="track"><div class="track-fill" style="width:'+(n/g[2]*100)+'%"></div></div></div>'}).join("")+detail("Confiança",x.confidence)+'</div>'+
@@ -304,6 +342,7 @@ if(state.loading)return;state.loading=true;
 try{
 if(act==="nav"){state.view=id;state.notice="";render();}
 else if(act==="scope"){state.leadScope=id;state.filter="";render();}
+else if(act==="followup"){state.selected=id;state.view="followup";state.notice="";render();}
 else if(act==="open"){state.selected=id;state.view="dossier";state.notice="";render();}
 else if(act==="new"){if(!editable())throw Error("Somente leitura.");state.notice="";state.error=false;state.draft=null;state.editing="new";render();}
 else if(act==="edit"){if(!editable())throw Error("Somente leitura.");state.notice="";state.error=false;state.draft=null;state.editing=id;render();}
@@ -333,8 +372,10 @@ else if(f.id==="lead-form")await saveLead(f);
 else if(f.id==="stage-form")await saveStage(f);
 else if(f.id==="evidence-form")await addEvidence(f);
 else if(f.id==="activity-form")await addActivity(f);
+else if(f.id==="followup-form")await saveFollowup(f);
 }catch(err){note(err.message||String(err),true)}finally{state.loading=false;}
 });
+root.addEventListener("change",e=>{if(e.target.name==="followup_lead"&&!state.loading){state.selected=e.target.value;state.notice="";render();}});
 root.addEventListener("input",e=>{
 if(e.target.id==="search"){state.filter=e.target.value;const at=e.target.selectionStart;render();const el=root.querySelector("#search");if(el){el.focus();el.setSelectionRange(at,at);}}
 });
