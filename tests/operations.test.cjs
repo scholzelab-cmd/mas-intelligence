@@ -1,8 +1,8 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
-const context={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,crypto:require('node:crypto').webcrypto};
+const context={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}},crypto:require('node:crypto').webcrypto};
 vm.createContext(context);
-vm.runInContext(source.replace('init();\n})();','window.api={state,blank,readyLead,visibleLeads,businessDossier,commercialActivity,whatsappPanel,whatsappMessage,dashboard,navItems};\n})();'),context);
+vm.runInContext(source.replace('init();\n})();','window.api={state,blank,readyLead,visibleLeads,businessDossier,commercialActivity,whatsappPanel,whatsappMessage,dashboard,navItems,saveLead};\n})();'),context);
 const a=context.window.api;a.state.demo=false;
 const lead={...a.blank(),id:'1',company:'Empresa & Filhos',verification_status:'verificada',contact_phone:'(47) 99999-1234'};
 let count=0;function test(name,fn){fn();count++;console.log('PASS '+name)}
@@ -21,4 +21,14 @@ test('resumo mantém fatos e retira bastidores antigos',()=>{const text=a.busine
 test('nota comercial é preservada e importação fica fora da timeline',()=>{assert.ok(a.commercialActivity({description:'Cliente pediu proposta na terça-feira'}));assert.ok(!a.commercialActivity({description:'Revisão Work / Sherlock FILA100'}))});
 test('WhatsApp inclui empresa e mensagem íntegra codificada',()=>{const html=a.whatsappPanel(lead);const href=html.match(/href="([^"]+)"/)[1].replace(/&amp;/g,'&');const url=new URL(href);assert.equal(url.pathname,'/5547999991234');assert.equal(url.searchParams.get('text'),a.whatsappMessage(lead));assert.ok(html.includes('Empresa &amp; Filhos'))});
 test('funcionário não vê diagnóstico técnico',()=>{a.state.role='editor';assert.ok(!a.navItems().some(x=>x[0]==='tests'));a.state.role='admin';assert.ok(a.navItems().some(x=>x[0]==='tests'))});
+test('alerta cadastral continua no resumo comercial',()=>assert.ok(a.businessDossier({...lead,dossier:'[ALERTA CADASTRAL — fonte secundária]\\nConfirmar situação antes de abordar.\\n[FILA100]\\nConstatação: Identidade pendente.'}).includes('Confirmar situação')));
+test('nome de empreendimento High to Work não oculta nota comercial',()=>assert.ok(a.commercialActivity({description:'Cliente pediu proposta para High to Work'})));
+(async()=>{
+a.state.demo=true;const original='[FILA100]\nConstatação: Portfólio publicado.\n[HISTÓRICO ANTERIOR]\nRevisão Work';
+const archived={...lead,source_url:'https://example.com/contato',source_checked_at:'2026-10-22',dossier:original};a.state.leads=[archived];a.state.editing=archived.id;
+await a.saveLead({...archived,dossier:a.businessDossier(archived)});
+test('editar outro campo preserva auditoria original do dossiê',()=>assert.equal(archived.dossier,original));
+a.state.editing=archived.id;await a.saveLead({...archived,dossier:'Responsável pediu retorno na terça-feira.'});
+test('nova nota comercial fica visível e histórico original preservado',()=>{assert.equal(a.businessDossier(archived),'Responsável pediu retorno na terça-feira.');assert.ok(archived.dossier.endsWith(original))});
 console.log('TOTAL '+count+' PASS');
+})().catch(e=>{console.error(e);process.exitCode=1});
