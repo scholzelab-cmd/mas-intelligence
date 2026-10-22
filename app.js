@@ -110,7 +110,7 @@ for(const res of [leads,evidences,activities])if(res.error)throw res.error;
 state.leads=leads.data||[];state.evidences=evidences.data||[];state.activities=activities.data||[];
 }
 function login(){
-root.innerHTML='<div class="signin"><div class="signin-box"><div class="brand"><div class="brand-icon">⌕</div><div><strong>MAS INTELLIGENCE</strong><small>SHERLOCK PROSPECTADOR</small></div></div><h1>Acessar CRM</h1><p class="muted">Área comercial exclusiva da MAS. Entre com sua conta autorizada.</p>'+(state.notice?'<div class="banner error">'+escape(state.notice)+'</div>':"")+
+root.innerHTML='<div class="signin"><div class="signin-box"><div class="brand"><div class="brand-icon">⌕</div><div><strong>MAS INTELLIGENCE</strong><small>PROSPECÇÃO COMERCIAL</small></div></div><h1>Acessar CRM</h1><p class="muted">Área comercial exclusiva da MAS. Entre com sua conta autorizada.</p>'+(state.notice?'<div class="banner error">'+escape(state.notice)+'</div>':"")+
 '<form id="login-form">'+field("email","E-mail ou usuário","","text")+field("password","Senha","","password")+'<button class="btn primary" style="width:100%;margin-top:12px" type="submit">Entrar</button></form>'+
 (config.allowDemo!==false?'<div style="margin-top:16px;text-align:center">'+button("Conhecer demonstração fictícia","demo","","outline")+'</div>':"")+'</div></div>';
 }
