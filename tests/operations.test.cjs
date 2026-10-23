@@ -32,3 +32,26 @@ a.state.editing=archived.id;await a.saveLead({...archived,dossier:'Responsável 
 test('nova nota comercial fica visível e histórico original preservado',()=>{assert.equal(a.businessDossier(archived),'Responsável pediu retorno na terça-feira.');assert.ok(archived.dossier.endsWith(original))});
 console.log('TOTAL '+count+' PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});
+
+// Acompanhamento e prioridade manual
+{
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ctx={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,crypto:require('node:crypto').webcrypto,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}}};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('init();\n})();','window.api={state,blank,score,saveFollowup,followupData,leadPriority,visibleLeads,followupPage,activityHTML,commercialActivity};\n})();'),ctx);
+const a=ctx.window.api;let n=0;function check(name,f){f();n++;console.log('PASS '+name)}
+(async()=>{a.state.demo=true;a.state.role='editor';a.state.user={id:'staff',user_metadata:{username:'arch01'}};a.state.leads=[{...a.blank(),id:'a',company:'Empresa A',verification_status:'verificada',icp_sector:10},{...a.blank(),id:'b',company:'Empresa B',verification_status:'verificada'}];a.state.selected='b';
+await a.saveFollowup({action:'apresentacao',priority:'urgente',comment:'Apresentação realizada. Retornar amanhã.'});
+check('ação e comentário preservados',()=>assert.equal(a.followupData(a.state.activities[0]).action,'apresentacao'));
+check('prioridade persiste no histórico carregável',()=>assert.equal(a.leadPriority(a.state.leads[1]),'urgente'));
+check('prioridade ordena antes de score maior',()=>assert.equal(a.visibleLeads()[0].id,'b'));
+check('prioridade não muda score ou funil',()=>{assert.equal(a.score(a.state.leads[1]),0);assert.equal(a.state.leads[1].commercial_status,'nao_contatada')});
+check('aba mostra formulário e histórico',()=>{const html=a.followupPage();assert.ok(html.includes('Salvar atualização'));assert.ok(html.includes('Apresentação realizada.'))});
+check('comentários não somem por mencionar ferramenta',()=>assert.ok(a.commercialActivity({description:'[MAS_ACOMPANHAMENTO_V1]'+JSON.stringify({action:'comentario',priority:'alta',comment:'Comentário sobre Sherlock'})})));
+check('HTML de comentário escapado',()=>assert.ok(a.activityHTML({description:'[MAS_ACOMPANHAMENTO_V1]'+JSON.stringify({action:'comentario',priority:'normal',comment:'<img src=x onerror=alert(1)>'}),created_at:new Date().toISOString(),author_id:'staff'}).includes('&lt;img')));
+check('JSON inválido mantém nota antiga legível',()=>assert.equal(a.followupData({description:'[MAS_ACOMPANHAMENTO_V1]{bad'}),null));
+await assert.rejects(a.saveFollowup({action:'comentario',priority:'alta',comment:' '}));n++;console.log('PASS comentário vazio rejeitado');
+a.state.demo=false;a.state.role='viewer';await assert.rejects(a.saveFollowup({action:'comentario',priority:'alta',comment:'teste'}));n++;console.log('PASS leitor não grava');
+a.state.role='editor';a.state.workspace='workspace';a.state.db={from(){return {insert(){return {select:async()=>({error:new Error('Banco indisponível')})}}}}};await assert.rejects(a.saveFollowup({action:'contato',priority:'alta',comment:'teste'}));n++;console.log('PASS falha do banco não confirma gravação');
+console.log('TOTAL '+n+' PASS');})().catch(e=>{console.error(e);process.exitCode=1});
+
+}
