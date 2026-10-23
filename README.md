@@ -1,3 +1,17 @@
+# MAS Intelligence CRM — v1.5.0
+
+Atualização de 23/10/2026: aba **Acompanhamento** para comentários, contato feito, apresentação do negócio, negociação e retorno. Cada atualização conserva autor e data/hora no histórico. Prioridade manual Normal, Alta ou Urgente: destaca cartões e ordena Dashboard/Leads sem modificar o score. A etapa do funil é salva separadamente na mesma aba, apenas conforme interações reais.
+
+Implementação em `app.js`, cache de `index.html` v1.5.0 e 11 novos cenários em `tests/operations.test.cjs`. Sem alteração de esquema: usa `activities` com a autoria e RLS existentes. Leitor consulta; editor e administrador atualizam. Não há envio automático de mensagens.
+
+Validação: **131 verificações locais aprovadas**, publicação via Actions e teste real autenticado por arch01 no cadastro fictício: comentário + prioridade Urgente, recarregamento, persistência e retorno a Normal. Nenhum lead comercial alterado nesses testes. Console inspecionado sem avisos/erros. Persistem os limites de homologação descritos abaixo; não declarar produção 100% homologada.
+
+Para usar: **Acompanhamento → escolher empresa → O que foi feito → comentário → prioridade → Salvar atualização**. Para mover o funil, selecionar Etapa do funil e Salvar etapa. O botão Acompanhamento também está no dossiê.
+
+---
+
+## Histórico da entrega anterior
+
 # MAS Intelligence CRM v1.4.3 —22/10/2026
 
 Frontend: https://scholzelab-cmd.github.io/mas-intelligence/ · branch `main`.
