@@ -1,3 +1,13 @@
+# MAS Intelligence CRM — v1.5.1
+
+Atualização de 23/10/2026: campo **Instagram oficial (link ou @usuário)** no cadastro e botão **Abrir Instagram da empresa** no dossiê. O perfil é salvo em `leads.instagram_url`, normalizado para URL HTTPS canônica; links externos e publicações são rejeitados. Campo vazio não gera perfil presumido. A migração `add_lead_instagram_url` foi aplicada no Supabase, mantendo as políticas RLS existentes. O esquema de referência está em `supabase/schema.sql`.
+
+**139 verificações locais aprovadas**, incluindo 8 novas de Instagram. O perfil da Ogliari foi vinculado a partir do link publicado no site oficial, com evidência e consulta de 23/10. Conteúdo do perfil não acessível pela ferramenta de pesquisa. Teste real por arch01: edição por @usuário, gravação no banco e recuperação do link após recarregar. Não houve pesquisa de Instagram das 100 empresas; os demais campos permanecem sem preenchimento até confirmação. O CSV mantém suas 21 colunas anteriores nesta revisão.
+
+Arquivos alterados: app.js, index.html (cache v1.5.1), tests/operations.test.cjs, supabase/schema.sql e README.md. Os recursos de Acompanhamento v1.5.0 permanecem ativos. Nenhuma comunicação foi enviada a empresas.
+
+---
+
 # MAS Intelligence CRM — v1.5.0
 
 Atualização de 23/10/2026: aba **Acompanhamento** para comentários, contato feito, apresentação do negócio, negociação e retorno. Cada atualização conserva autor e data/hora no histórico. Prioridade manual Normal, Alta ou Urgente: destaca cartões e ordena Dashboard/Leads sem modificar o score. A etapa do funil é salva separadamente na mesma aba, apenas conforme interações reais.
