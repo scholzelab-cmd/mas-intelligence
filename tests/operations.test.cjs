@@ -55,3 +55,20 @@ a.state.role='editor';a.state.workspace='workspace';a.state.db={from(){return {i
 console.log('TOTAL '+n+' PASS');})().catch(e=>{console.error(e);process.exitCode=1});
 
 }
+
+// Instagram: perfil seguro, persistência no cadastro e ausência de suposições.
+{
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const c={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}}};
+vm.createContext(c);vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('init();\n})();','window.api={instagramURL,instagramLink,blank,formLead,validate};\n})();'),c);
+const a=c.window.api;let n=0;function t(name,f){f();n++;console.log('PASS '+name)}
+t('Instagram normaliza arroba',()=>assert.equal(a.instagramURL('@Empresa.Exemplo'),'https://www.instagram.com/empresa.exemplo/'));
+t('Instagram aceita link com parâmetro e remove rastreamento',()=>assert.equal(a.instagramURL('https://instagram.com/empresa/?igsh=123'),'https://www.instagram.com/empresa/'));
+t('Instagram rejeita domínio falso e esquemas inseguros',()=>{for(const u of ['https://instagram.com.evil.test/empresa/','https://www.instagram.com@evil.test/empresa/','javascript:alert(1)','http://instagram.com/empresa/'])assert.equal(a.instagramURL(u),null)});
+t('Instagram rejeita publicação e perfil inválido',()=>{for(const u of ['https://instagram.com/p/ABC','https://instagram.com/reels/','@nome..invalido','@empresa.'])assert.equal(a.instagramURL(u),null)});
+t('Instagram não inventa perfil quando vazio',()=>assert.ok(a.instagramLink({company:'Empresa'}).includes('não informado')));
+t('Instagram é link externo protegido',()=>assert.ok(a.instagramLink({instagram_url:'@empresa'}).includes('rel="noopener noreferrer"')));
+t('cadastro normaliza e preserva Instagram',()=>assert.equal(a.formLead({...a.blank(),instagram_url:'@Empresa'}).instagram_url,'https://www.instagram.com/empresa/'));
+t('validação rejeita Instagram inválido',()=>assert.ok(a.validate({...a.blank(),company:'Teste',instagram_url:'https://evil.test/empresa'})));
+console.log('TOTAL '+n+' PASS');
+}
