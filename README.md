@@ -1,3 +1,15 @@
+# Revisão dos canais de Instagram — 23/10/2026
+
+Código atual: **v1.5.1**. A revisão dos dados comerciais no Supabase pesquisou os 123 cadastros reais (o registro fictício de QA foi excluído da pesquisa). Foram salvos 113 links: 87 vínculos confirmados por fontes institucionais e 26 correspondências corroboradas por confronto público, identificadas como indício na evidência. Dez cadastros ficaram sem link por confirmação insuficiente. Na fila de 100 empresas, há 99 links e uma pendência de Instagram. As classificações, fontes e ressalvas estão nos dossiês autenticados; a base comercial permanece fora do repositório público.
+
+Esta rodada altera dados e evidências, sem alterar versão do aplicativo, score, etapas do funil, permissões ou autoria de atividades comerciais. Não houve mensagens enviadas a empresas. A revisão de Instagram não comprova demanda, comprador nem disponibilidade de atendimento por DM. O CSV padrão do aplicativo mantém as 21 colunas anteriores.
+
+Validação: total de 124 registros preservado, 113 URLs canônicas sem formatos inválidos, 566 evidências, 404 atividades e nenhuma interação comercial registrada. ABecker conferida na interface pública autenticada após recarregamento. A suíte de 139 verificações refere-se ao código v1.5.1, validado na entrega anterior; não foi necessário alterar código nesta revisão.
+
+---
+
+## Histórico técnico anterior
+
 # MAS Intelligence CRM — v1.5.1
 
 Atualização de 23/10/2026: campo **Instagram oficial (link ou @usuário)** no cadastro e botão **Abrir Instagram da empresa** no dossiê. O perfil é salvo em `leads.instagram_url`, normalizado para URL HTTPS canônica; links externos e publicações são rejeitados. Campo vazio não gera perfil presumido. A migração `add_lead_instagram_url` foi aplicada no Supabase, mantendo as políticas RLS existentes. O esquema de referência está em `supabase/schema.sql`.
