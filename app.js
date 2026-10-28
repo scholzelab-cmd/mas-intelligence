@@ -95,7 +95,7 @@ const records=state.activities.filter(a=>a.lead_id===x.id&&followupData(a)).sort
 return records.length?followupData(records[0]).priority:'normal';
 }
 function priorityBadge(x){const p=leadPriority(x);return p==='normal'?'':pill('★ Prioridade '+label(PRIORITIES,p),'amber');}
-function compareLeads(a,b){const ranks={normal:0,alta:1,urgente:2};return ranks[leadPriority(b)]-ranks[leadPriority(a)]||String(a.company||"").localeCompare(String(b.company||""),"pt-BR");}
+function compareLeads(a,b){const ranks={normal:0,alta:1,urgente:2};return ranks[leadPriority(b)]-ranks[leadPriority(a)];}
 function activityHTML(a){
 const d=followupData(a),author=a.author_id?(a.author_id===state.user?.id?(state.user?.user_metadata?.username||'Você'):'Funcionário '+a.author_id.slice(0,8)):'Registro anterior';
 return '<div class="event"><strong>'+escape(d?label(FOLLOWUP_ACTIONS,d.action):a.description)+'</strong>'+(d?'<p style="white-space:pre-wrap;overflow-wrap:anywhere">'+escape(d.comment)+'</p>'+pill('Prioridade '+label(PRIORITIES,d.priority),d.priority==='normal'?'':'amber'):'')+'<small>'+escape(author)+' · '+escape(new Date(a.created_at).toLocaleString('pt-BR'))+'</small></div>';
