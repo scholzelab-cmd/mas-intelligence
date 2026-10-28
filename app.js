@@ -69,7 +69,7 @@ if(x.verification_status==='descartada'||['nao_contatar','perdida'].includes(x.c
 const address=String(x.contact_email||'').trim(),valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address);
 if(!valid)return '<div class="panel" style="margin-top:13px"><h2>E-mail</h2><p>E-mail corporativo não informado ou inválido.</p></div>';
 const subject='Apresentação institucional | MAS';
-const compose='https://outlook.live.com/mail/0/deeplink/compose?'+new URLSearchParams({to:address,subject,body:emailMessage(x)}).toString();
+const compose='https://outlook.live.com/mail/0/deeplink/compose?to='+encodeURIComponent(address)+'&subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(emailMessage(x));
 return '<div class="panel" style="margin-top:13px"><h2>E-mail</h2><p>Destinatário: '+escape(address)+'</p><a class="btn primary" href="'+escape(compose)+'" target="_blank" rel="noopener noreferrer">Preparar e-mail no Outlook</a><p class="muted">O Outlook abrirá um rascunho. Revise o texto, anexe o vídeo institucional e envie manualmente.</p></div>';
 }
 function whatsappPanel(x){
