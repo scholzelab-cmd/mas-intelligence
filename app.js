@@ -59,6 +59,19 @@ if(n.length===10||n.length===11)n='55'+n;
 return /^55[1-9]\d(?:[2-5]\d{7}|9\d{8})$/.test(n)?n:null;
 }
 function whatsappMessage(x){return 'Olá, equipe da '+x.company+'! Sou da MAS, de Joinville. Produzimos conteúdo visual e audiovisual para apresentar empresas e empreendimentos. Quem cuida de marketing ou da contratação desses serviços? Posso enviar uma apresentação breve?';}
+function emailMessage(x){
+const name=String(x.contact_name||x.buyer_name||'').trim()||'equipe da '+x.company;
+return 'Prezado(a) '+name+',\n\nEspero que esteja bem.\n\nDando continuidade ao nosso contato, gostaria de apresentar a MAS e compartilhar um pouco mais sobre nosso trabalho e nossas soluções.\n\nEncaminho, em anexo, um breve vídeo institucional que apresenta nossa atuação, a qualidade dos nossos serviços e o compromisso que dedicamos a cada projeto.\n\nAcreditamos que existem boas oportunidades para desenvolvermos uma parceria, oferecendo soluções alinhadas às necessidades e aos objetivos da sua empresa.\n\nSerá um prazer agendarmos uma breve conversa para entender suas demandas e avaliar possíveis oportunidades de colaboração.\n\nAgradeço pela atenção e permaneço à disposição para quaisquer esclarecimentos.\n\nAtenciosamente,\n\nCristian Scholze\nMAS\nWhatsApp: (41) 98709-7781';
+}
+function emailPanel(x){
+if(state.demo)return '<div class="panel"><h2>E-mail</h2><p>Demonstração fictícia: e-mails externos desativados.</p></div>';
+if(x.verification_status==='descartada'||['nao_contatar','perdida'].includes(x.commercial_status)||/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||''))return '<div class="panel" style="margin-top:13px"><h2>E-mail</h2><p>Contato bloqueado para este cadastro.</p></div>';
+const address=String(x.contact_email||'').trim(),valid=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address);
+if(!valid)return '<div class="panel" style="margin-top:13px"><h2>E-mail</h2><p>E-mail corporativo não informado ou inválido.</p></div>';
+const subject='Apresentação institucional | MAS';
+const compose='https://outlook.live.com/mail/0/deeplink/compose?'+new URLSearchParams({to:address,subject,body:emailMessage(x)}).toString();
+return '<div class="panel" style="margin-top:13px"><h2>E-mail</h2><p>Destinatário: '+escape(address)+'</p><a class="btn primary" href="'+escape(compose)+'" target="_blank" rel="noopener noreferrer">Preparar e-mail no Outlook</a><p class="muted">O Outlook abrirá um rascunho. Revise o texto, anexe o vídeo institucional e envie manualmente.</p></div>';
+}
 function whatsappPanel(x){
 if(state.demo)return '<div class="panel"><h2>WhatsApp</h2><p>Demonstração fictícia: contatos externos desativados.</p></div>';
 if(x.verification_status==='descartada'||['nao_contatar','perdida'].includes(x.commercial_status)||/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||''))return '<div class="panel"><h2>WhatsApp</h2><p>Contato bloqueado para este cadastro.</p></div>';
@@ -229,7 +242,7 @@ ev.map(e=>'<div class="detail"><strong>'+escape(/sherlock|FILA100|revis[aã]o do
 (editable()?'<form id="activity-form"><div class="grid2">'+select("type","Tipo","nota",[["nota","Nota"],["evidencia","Pesquisa"],["contato","Contato realizado"],["reuniao","Reunião"],["proposta","Proposta"]])+field("description","Descrição do ocorrido","")+'</div><button class="btn primary" style="margin-top:10px" type="submit">Adicionar registro</button></form>':"")+'</div></div>'+
 '<div><div class="panel"><h2>Prioridade comercial</h2><div class="row between"><strong style="font-size:31px">'+(s??"—")+' <small class="muted" style="font-size:12px">/100</small></strong>'+pill(level(x)[0],level(x)[1])+'</div>'+(s===null?'<p class="muted">Pontuação não publicada: identidade ainda não verificada ou lead descartado.</p>':"")+
 gr.map(g=>{const n=g[1].reduce((v,k)=>v+Number(x[k]||0),0);return '<div style="margin-top:14px"><div class="row between" style="font-size:12px;margin-bottom:6px"><span>'+g[0]+'</span><strong>'+n+'/'+g[2]+'</strong></div><div class="track"><div class="track-fill" style="width:'+(n/g[2]*100)+'%"></div></div></div>'}).join("")+detail("Confiança",x.confidence)+'</div>'+
-whatsappPanel(x)+'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
+whatsappPanel(x)+emailPanel(x)+'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
 }
 function testPage(){
 return '<div class="panel"><h2>Diagnóstico da aplicação</h2><p class="muted">Estes testes verificam funções locais do programa. Não substituem testes reais de RLS nem de disponibilidade do Supabase.</p>'+button("Executar testes","test","","primary")+'<div style="margin-top:14px">'+state.checks.map(x=>'<div class="testline"><span>'+escape(x.name)+'</span>'+pill(x.ok?"PASSOU":"FALHOU",x.ok?"green":"amber")+'</div>').join("")+'</div></div>';
