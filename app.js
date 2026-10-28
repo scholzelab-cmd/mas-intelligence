@@ -20,7 +20,7 @@ const today=()=>{const d=new Date();return [d.getFullYear(),String(d.getMonth()+
 const date=x=>x?new Date(x.length===10?x+"T12:00:00":x).toLocaleDateString("pt-BR"):"Não encontrado";
 const uid=()=>crypto.randomUUID();
 const demoItems=[["Construtora Exemplo Azul (fictícia)","Residencial Horizonte (exemplo)"],["Incorporadora Modelo Norte (fictícia)","Parque das Águas (exemplo)"],["Empreendimentos Teste SC (fictícia)","Jardins do Norte (exemplo)"]];
-const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",leadScope:"ready",notice:"",error:false,loading:false,checks:[],draft:null,authEpoch:0,employees:[]};
+const state={db:null,user:null,workspace:null,role:null,demo:!connected,leads:[],evidences:[],activities:[],view:"dashboard",selected:null,editing:null,filter:"",leadScope:"ready",cityFilter:"all",stageFilter:"all",dashboardPool:"",dashboardOrder:[],notice:"",error:false,loading:false,checks:[],draft:null,authEpoch:0,employees:[]};
 function blank(){
 const l={company:"",city:"Joinville",uf:"SC",segment:"Construtora / incorporadora",project:"",company_size:"",project_stage:"",verification_status:"identificada",opportunity_type:"hipotese_exploratoria",commercial_status:"nao_contatada",confidence:"baixa",source_url:"",source_checked_at:null,signal:"",signal_date:null,website:"",buyer_department:"",contact_channel:"",contact_email:"",contact_phone:"",instagram_url:"",next_action:"",dossier:""};
 POINTS.forEach(p=>l[p[0]]=0);return l;
@@ -120,7 +120,7 @@ else{const r=await state.db.from('activities').insert({...payload,workspace_id:s
 note('Acompanhamento salvo. Nenhuma mensagem foi enviada.');
 }
 
-function visibleLeads(){return state.leads.filter(x=>(state.leadScope==='all'||(state.leadScope==='pending'?!readyLead(x):readyLead(x)))&&norm(x.company+' '+x.city+' '+x.project).includes(norm(state.filter))).sort(compareLeads);}
+function visibleLeads(){return state.leads.filter(x=>(state.leadScope==='all'||(state.leadScope==='pending'?!readyLead(x):readyLead(x)))&&(state.cityFilter==='all'||x.city===state.cityFilter)&&(state.stageFilter==='all'||x.commercial_status===state.stageFilter)&&norm(x.company+' '+x.city+' '+x.project).includes(norm(state.filter))).sort(compareLeads);}
 function commercialActivity(a){if(followupData(a))return true;return !/\bsherlock\b|revis[aã]o work|FILA100|revis[aã]o documental|importa[cç][aã]o|recalibr|auditoria|revalida[cç][aã]o/i.test(a.description||'');}
 function businessDossier(x){
 const raw=String(x.dossier||'').replace(/\\r\\n|\\n/g,'\n');
@@ -213,19 +213,26 @@ if(password.length<12||password.length>128||!/[a-z]/.test(password)||!/[A-Z]/.te
 const result=await teamRequest({action:"create",username,password});
 form.reset();await loadTeam();state.notice=result.message||"Funcionário criado.";state.error=false;render();
 }
+function shuffleIds(ids){const out=[...ids];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]];}return out;}
 function dashboard(){
-const l=state.leads.filter(readyLead).sort(compareLeads);
-const k=[["Empresas",l.length],["Verificadas",l.filter(verified).length],["Prioridade alta+",l.filter(x=>score(x)!==null&&score(x)>=60).length],["Reuniões",l.filter(x=>x.commercial_status==="reuniao").length],["Propostas",l.filter(x=>x.commercial_status==="proposta").length],["Negociações",l.filter(x=>x.commercial_status==="negociacao").length],["Convertidas",l.filter(x=>x.commercial_status==="convertida").length]];
+const all=state.leads.filter(readyLead);
+const pending=all.filter(x=>x.commercial_status==="nao_contatada");
+const poolKey=pending.map(x=>x.id).sort().join("|");
+if(state.dashboardPool!==poolKey){state.dashboardPool=poolKey;state.dashboardOrder=shuffleIds(pending.map(x=>x.id));}
+const byId=new Map(pending.map(x=>[x.id,x]));
+const picks=state.dashboardOrder.map(id=>byId.get(id)).filter(Boolean).slice(0,8);
+const k=[["Empresas",all.length],["Verificadas",all.filter(verified).length],["Prioridade alta",all.filter(x=>leadPriority(x)!=="normal").length],["Reuniões",all.filter(x=>x.commercial_status==="reuniao").length],["Propostas",all.filter(x=>x.commercial_status==="proposta").length],["Negociações",all.filter(x=>x.commercial_status==="negociacao").length],["Convertidas",all.filter(x=>x.commercial_status==="convertida").length]];
 return '<div class="banner">'+(state.demo?"Este é um ambiente demonstrativo com empresas inventadas. Cadastros não são compartilhados nem salvos.":"Sua carteira de prospecção e próximas ações comerciais.")+'</div><div class="metrics">'+k.map(x=>'<div class="metric"><small>'+x[0]+'</small><strong>'+x[1]+'</strong></div>').join("")+'</div>'+
-'<div class="section"><h2>Empresas para contato</h2>'+button("Atualizar","refresh","","small")+'</div><div class="panel">'+(l.length?l.slice(0,8).map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Projeto pendente")+'</small></div><div>'+pill(label(VERIFY,x.verification_status))+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join(""):'<p class="muted">Nenhuma empresa cadastrada.</p>')+'</div><div class="grid2" style="margin-top:15px"><div class="panel"><h3>Critério de prioridade</h3><p>ICP 30 · Sinal 25 · Potencial 15 · Acesso 15 · Geografia 10 · Evidências 5.</p><p class="muted">Score só para empresas verificadas não descartadas. Score não equivale a interesse de compra.</p></div><div class="panel"><h3>Operação comercial</h3><p>Registre fontes específicas, datas, departamento comprador e próximos passos. Nenhuma comunicação é enviada automaticamente.</p></div></div>';
+'<div class="section"><h2>Empresas não contatadas — sugestões variadas</h2>'+button("Sortear outras empresas","refresh","","small")+'</div><div class="panel">'+(picks.length?picks.map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Projeto pendente")+'</small></div><div>'+pill(label(VERIFY,x.verification_status))+'</div><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join(""):'<p class="muted">Nenhuma empresa pronta e ainda não contatada no momento.</p>')+'</div><div class="grid2" style="margin-top:15px"><div class="panel"><h3>Critério de prioridade</h3><p>ICP 30 · Sinal 25 · Potencial 15 · Acesso 15 · Geografia 10 · Evidências 5.</p><p class="muted">Score e critérios detalhados ficam no cadastro. A pontuação não equivale a interesse de compra.</p></div><div class="panel"><h3>Operação comercial</h3><p>Registre fontes específicas, datas, departamento comprador e próximos passos. Nenhuma comunicação é enviada automaticamente.</p></div></div>';
 }
 function leadsPage(){
 const list=visibleLeads();
-return '<div class="row" style="margin-bottom:14px">'+button('Para contato','scope','ready','small')+button('Pendências','scope','pending','small')+button('Todos','scope','all','small')+pill(state.leadScope==='pending'?'Pendências':state.leadScope==='all'?'Todos os cadastros':'Para contato')+'</div><div class="row between" style="margin-bottom:14px"><input id="search" class="input" style="max-width:360px;flex:1" placeholder="Buscar empresa, cidade ou empreendimento" value="'+escape(state.filter)+'"><div class="row">'+pill(list.length+" registros")+button("Exportar CSV","csv","","small")+'</div></div><div class="panel tablewrap"><div class="leadrow header"><span>Empresa</span><span>Estado</span><span>Score</span><span>Funil</span><span></span></div>'+
-(list.length?list.map(x=>'<div class="leadrow"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Não informado")+'</small></div><div>'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+'</div><strong>'+(score(x)??"—")+'</strong><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Dossiê","open",x.id,"small")+'</div>').join(""):'<p>Nenhuma empresa encontrada.</p>')+'</div>';
+const cities=[...new Set(state.leads.map(x=>x.city).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+return '<div class="row" style="margin-bottom:14px">'+button('Para contato','scope','ready','small')+button('Pendências','scope','pending','small')+button('Todos','scope','all','small')+pill(state.leadScope==='pending'?'Pendências':state.leadScope==='all'?'Todos os cadastros':'Para contato')+'</div><div class="row between" style="margin-bottom:14px;align-items:flex-end"><input id="search" class="input" style="max-width:320px;flex:1" placeholder="Buscar empresa ou empreendimento" value="'+escape(state.filter)+'"><div class="grid2" style="flex:1;min-width:280px"><div class="field"><label for="city-filter">Cidade</label><select id="city-filter" name="city_filter" class="input"><option value="all">Todas as cidades</option>'+cities.map(city=>'<option value="'+escape(city)+'" '+(state.cityFilter===city?'selected':'')+'>'+escape(city)+'</option>').join('')+'</select></div><div class="field"><label for="stage-filter">Etapa do funil</label><select id="stage-filter" name="stage_filter" class="input"><option value="all">Todas as etapas</option>'+STAGES.map(stage=>'<option value="'+escape(stage[0])+'" '+(state.stageFilter===stage[0]?'selected':'')+'>'+escape(stage[1])+'</option>').join('')+'</select></div></div><div class="row">'+pill(list.length+" registros")+button("Exportar CSV","csv","","small")+'</div></div><div class="panel tablewrap"><div class="leadrow header" style="grid-template-columns:1.6fr 1fr 1fr auto"><span>Empresa</span><span>Estado</span><span>Funil</span><span></span></div>'+
+(list.length?list.map(x=>'<div class="leadrow" style="grid-template-columns:1.6fr 1fr 1fr auto"><div><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+"/"+escape(x.uf)+' · '+escape(x.project||"Não informado")+'</small></div><div>'+pill(label(VERIFY,x.verification_status),verified(x)?"green":"")+'</div><small>'+escape(label(STAGES,x.commercial_status))+'</small>'+button("Dossiê","open",x.id,"small")+'</div>').join(""):'<p>Nenhuma empresa encontrada.</p>')+'</div>';
 }
 function pipelinePage(){
-return '<div class="banner">O funil reflete somente status comerciais registrados. Para mudar a etapa, abra o dossiê do lead.</div><div class="kanban">'+STAGES.map(st=>{const ls=state.leads.filter(x=>verified(x)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&x.commercial_status===st[0]);return '<div class="lane"><div class="lane-title">'+escape(st[1])+pill(ls.length)+'</div>'+ls.map(x=>'<div class="ticket"><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+' · Score: '+(score(x)??"—")+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join("")+'</div>'}).join("")+'</div>';
+return '<div class="banner">O funil reflete somente status comerciais registrados. Para mudar a etapa, abra o dossiê do lead.</div><div class="kanban">'+STAGES.map(st=>{const ls=state.leads.filter(x=>verified(x)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&x.commercial_status===st[0]);return '<div class="lane"><div class="lane-title">'+escape(st[1])+pill(ls.length)+'</div>'+ls.map(x=>'<div class="ticket"><strong>'+escape(x.company)+'</strong>'+priorityBadge(x)+'<small>'+escape(x.city)+'</small>'+button("Abrir","open",x.id,"small")+'</div>').join("")+'</div>'}).join("")+'</div>';
 }
 function dossierPage(){
 const x=state.leads.find(l=>l.id===state.selected)||state.leads.find(readyLead)||state.leads[0];if(x)state.selected=x.id;if(!x)return '<div class="panel">Cadastre um lead para criar um dossiê.</div>';
@@ -260,7 +267,7 @@ const d=new FormData(f),x={};
 if(x.instagram_url)x.instagram_url=instagramURL(x.instagram_url)||x.instagram_url;
 POINTS.forEach(p=>x[p[0]]=Number(d.get(p[0])||0));return x;
 }
-async function refresh(){if(!state.demo)await load();render()}
+async function refresh(){state.dashboardPool="";if(!state.demo)await load();render()}
 async function saveLead(f){
 const x=formLead(f);state.draft=x;const error=validate(x);if(error)throw Error(error);
 const old=state.editing==="new"?null:state.leads.find(l=>l.id===state.editing);
@@ -364,7 +371,7 @@ const b=e.target.closest("[data-action]");if(!b)return;
 const act=b.dataset.action,id=b.dataset.id;
 if(state.loading)return;state.loading=true;
 try{
-if(act==="nav"){state.view=id;state.notice="";render();}
+if(act==="nav"){if(id==="dashboard"&&state.view!=="dashboard")state.dashboardPool="";state.view=id;state.notice="";render();}
 else if(act==="scope"){state.leadScope=id;state.filter="";render();}
 else if(act==="followup"){state.selected=id;state.view="followup";state.notice="";render();}
 else if(act==="open"){state.selected=id;state.view="dossier";state.notice="";render();}
@@ -399,7 +406,7 @@ else if(f.id==="activity-form")await addActivity(f);
 else if(f.id==="followup-form")await saveFollowup(f);
 }catch(err){note(err.message||String(err),true)}finally{state.loading=false;}
 });
-root.addEventListener("change",e=>{if(e.target.name==="followup_lead"&&!state.loading){state.selected=e.target.value;state.notice="";render();}});
+root.addEventListener("change",e=>{if(e.target.name==="followup_lead"&&!state.loading){state.selected=e.target.value;state.notice="";render();}else if(e.target.name==="city_filter"){state.cityFilter=e.target.value;render();}else if(e.target.name==="stage_filter"){state.stageFilter=e.target.value;render();}});
 root.addEventListener("input",e=>{
 if(e.target.id==="search"){state.filter=e.target.value;const at=e.target.selectionStart;render();const el=root.querySelector("#search");if(el){el.focus();el.setSelectionRange(at,at);}}
 });
