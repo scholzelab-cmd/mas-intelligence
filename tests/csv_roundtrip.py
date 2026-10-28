@@ -41,16 +41,13 @@ assert result.stdout.startswith(b'\xef\xbb\xbf'), 'BOM UTF-8 ausente'
 reader = csv.DictReader(io.StringIO(result.stdout.decode('utf-8-sig'), newline=''))
 rows = list(reader)
 assert len(rows) == len(leads), 'Quantidade de linhas alterada'
-assert len(reader.fieldnames) == 21 and len(set(reader.fieldnames)) == 21
+assert len(reader.fieldnames) == 20 and len(set(reader.fieldnames)) == 20 and 'score' not in reader.fieldnames
 for actual, original in zip(rows, leads):
     assert None not in actual, 'Quantidade incorreta de colunas'
     for field in reader.fieldnames:
-        if field == 'score':
-            expected = original.get('score_total')
-        else:
-            expected = original.get(field)
+        expected = original.get(field)
         expected = '' if expected is None else str(expected)
         if expected and expected[0] in '=+-@\t\r':
             expected = "'" + expected
         assert actual[field] == expected, f'Conteúdo alterado em {field}'
-print(f'PASS CSV: {len(rows)} registros, 21 colunas únicas, UTF-8/BOM e conteúdo preservados')
+print(f'PASS CSV: {len(rows)} registros, 20 colunas sem score, UTF-8/BOM e conteúdo preservados')
