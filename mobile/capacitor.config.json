@@ -1,0 +1,8 @@
+{
+  "appId": "com.mas.intelligence.crm",
+  "appName": "MAS CRM",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "automatic"
+  }
+}
