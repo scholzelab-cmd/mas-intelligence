@@ -1,0 +1,6 @@
+node_modules/
+www/
+ios/App/Pods/
+ios/App/build/
+ios/App/DerivedData/
+ios/App.xcworkspace/xcuserdata/
