@@ -11,6 +11,10 @@ O CRM pode ser adicionado à Tela de Início do iPhone como um aplicativo web (P
 
 A instalação usa o manifesto `manifest.webmanifest`, o ícone `icons/mas-crm.svg` e os metadados de web app para iOS em `index.html`. Não foi habilitado funcionamento offline; os dados continuam usando o ambiente web e o Supabase existentes.
 
+## Projeto do app iOS privado
+
+A estrutura inicial Capacitor e o plano de integração do Sherlock estão em [APP-PRIVATIVO-SHERLOCK.md](APP-PRIVATIVO-SHERLOCK.md) e na pasta [mobile](mobile/). O app nativo ainda não foi compilado nem assinado.
+
 ---
 
 # Revisão dos canais de Instagram — 23/10/2026
