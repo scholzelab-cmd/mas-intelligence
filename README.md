@@ -1,3 +1,18 @@
+# MAS Intelligence CRM — v1.6.0 · Aplicativo instalável para iPhone
+
+O CRM pode ser adicionado à Tela de Início do iPhone como um aplicativo web (PWA). Ele abre em janela própria do iOS, com ícone e nome **MAS CRM**. Esta é a versão instalável do site; não é um pacote nativo publicado na App Store. O uso exige conexão com a internet.
+
+## Instalação no iPhone
+
+1. Abra [https://scholzelab-cmd.github.io/mas-intelligence/](https://scholzelab-cmd.github.io/mas-intelligence/) no **Safari**.
+2. Toque em **Compartilhar**.
+3. Escolha **Adicionar à Tela de Início**. Se aparecer a opção **Abrir como App Web**, deixe-a ativada.
+4. Toque em **Adicionar**. O ícone **MAS CRM** ficará disponível na Tela de Início.
+
+A instalação usa o manifesto `manifest.webmanifest`, o ícone `icons/mas-crm.svg` e os metadados de web app para iOS em `index.html`. Não foi habilitado funcionamento offline; os dados continuam usando o ambiente web e o Supabase existentes.
+
+---
+
 # Revisão dos canais de Instagram — 23/10/2026
 
 Código atual: **v1.5.1**. A revisão dos dados comerciais no Supabase pesquisou os 123 cadastros reais (o registro fictício de QA foi excluído da pesquisa). Foram salvos 113 links: 87 vínculos confirmados por fontes institucionais e 26 correspondências corroboradas por confronto público, identificadas como indício na evidência. Dez cadastros ficaram sem link por confirmação insuficiente. Na fila de 100 empresas, há 99 links e uma pendência de Instagram. As classificações, fontes e ressalvas estão nos dossiês autenticados; a base comercial permanece fora do repositório público.
