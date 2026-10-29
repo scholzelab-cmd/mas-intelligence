@@ -1,0 +1,20 @@
+{
+  "name": "mas-intelligence-ios",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:web": "node scripts/prepare-web.mjs",
+    "ios:add": "npm run prepare:web && cap add ios",
+    "ios:sync": "npm run prepare:web && cap sync ios",
+    "ios:open": "cap open ios",
+    "ios:run": "npm run prepare:web && cap sync ios && cap run ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
