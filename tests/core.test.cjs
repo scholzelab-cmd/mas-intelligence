@@ -7,7 +7,7 @@ class TestURL extends URL{static createObjectURL(b){exportedBlob=b;return 'blob:
 const context={document:{getElementById:()=>root,body:{appendChild(){}},createElement:()=>({click(){},remove(){}})},window:{MAS_CONFIG:{}},URL:TestURL,Blob,crypto:require('node:crypto').webcrypto,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}},confirm:()=>true,setTimeout:()=>{}};
 vm.createContext(context);
 const source=fs.readFileSync(path.join(__dirname,'../app.js'),'utf8');
-vm.runInContext(source.replace('init();\n})();','window.testAPI={blank,validate,score,caps,state,test,whatsappNumber,whatsappPanel,saveLead,saveStage,addEvidence,addActivity,deletion,dossierPage,editor,exportCSV,startDemo};init();\n})();'),context);
+vm.runInContext(source.replace('init();\n})();','window.testAPI={blank,validate,score,caps,state,test,whatsappNumber,whatsappPanel,saveLead,saveStage,addEvidence,addActivity,deletion,dossierPage,editor,exportCSV,startDemo,render,page,mobileNavMarkup,todayPage};init();\n})();'),context);
 const a=context.window.testAPI;let count=0;
 function check(name,fn){fn();count++;console.log('PASS '+name)}
 (async()=>{
@@ -35,11 +35,14 @@ await a.addEvidence({attribute_name:'Porte',evidence_status:'confirmado',source_
 await a.addActivity({type:'nota',description:'Atividade fictícia QA'});
 check('evidência e histórico vinculados',()=>{assert.equal(a.state.evidences[0].lead_id,id);assert.equal(a.state.activities[0].lead_id,id)});
 check('dossiê exibe evidência',()=>assert.ok(a.dossierPage().includes('Evidência fictícia de teste')));
+check('pontuação aparece no cadastro e não no dossiê',()=>{a.state.editing=id;assert.ok(a.editor().includes('icp_sector'));assert.ok(!a.dossierPage().includes('Prioridade comercial'));assert.ok(!a.dossierPage().includes('/100'))});
 check('formulários e modal têm IDs únicos para rótulos acessíveis',()=>{a.state.editing=id;const html=a.dossierPage()+a.editor();const ids=Array.from(html.matchAll(/\sid="([^"]+)"/g),m=>m[1]);assert.equal(ids.length,new Set(ids).size);a.state.editing=null});
 a.state.demo=false;
 a.state.role='editor';check('editor pode editar mas não recebe botão de excluir lead',()=>{const html=a.dossierPage();assert.ok(html.includes('data-action="edit"'));assert.ok(!html.includes('data-action="delete"'))});
 a.state.role='viewer';check('viewer não recebe edição ou formulários de gravação',()=>{const html=a.dossierPage();assert.ok(!html.includes('data-action="edit"'));assert.ok(!html.includes('id="evidence-form"'));assert.ok(!html.includes('id="activity-form"'));assert.ok(!html.includes('id="stage-form"'))});
 a.state.role='admin';check('admin recebe botão de excluir lead',()=>assert.ok(a.dossierPage().includes('data-action="delete"')));
+check('navegação móvel oferece as áreas principais e opções extras',()=>{a.state.demo=true;a.state.role='admin';a.state.mobileMenuOpen=true;const html=a.mobileNavMarkup();for(const text of ['Início','Minha rotina','Empresas','Funil','Mais','Acompanhamento','Dossiês','Diagnóstico','Equipe'])assert.ok(html.includes(text));a.state.mobileMenuOpen=false});
+check('rotas de todas as abas renderizam sem exceção',()=>{a.state.demo=true;a.state.role='admin';for(const view of ['dashboard','today','leads','pipeline','followup','dossier','guide','tests','team']){a.state.view=view;assert.doesNotThrow(()=>a.page(),view)}});
 a.state.demo=true;
 a.state.leads[0].company='=HYPERLINK("malicioso")';a.exportCSV();const csv=await exportedBlob.text();
 check('CSV contém campos novos sem duplicação',()=>{const h=csv.split('\r\n')[0].split(',');assert.equal(h.filter(x=>x==='company_size').length,1);assert.ok(h.includes('project_stage'))});

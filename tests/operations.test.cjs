@@ -2,7 +2,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const source=fs.readFileSync(require('node:path').join(__dirname,'../app.js'),'utf8');
 const context={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}},crypto:require('node:crypto').webcrypto};
 vm.createContext(context);
-vm.runInContext(source.replace('init();\n})();','window.api={state,blank,readyLead,visibleLeads,businessDossier,commercialActivity,whatsappPanel,whatsappMessage,dashboard,navItems,saveLead};\n})();'),context);
+vm.runInContext(source.replace('init();\n})();','window.api={state,blank,readyLead,visibleLeads,businessDossier,commercialActivity,whatsappPanel,instagramPanel,emailPanel,whatsappMessage,dashboard,navItems,saveLead,dossierPage,editor,mobileNavMarkup,todayPage};\n})();'),context);
 const a=context.window.api;a.state.demo=false;
 const lead={...a.blank(),id:'1',company:'Empresa & Filhos',verification_status:'verificada',contact_phone:'(47) 99999-1234'};
 let count=0;function test(name,fn){fn();count++;console.log('PASS '+name)}
@@ -20,6 +20,11 @@ test('dashboard não promove cadastro sem canal',()=>assert.ok(!a.dashboard().in
 test('resumo mantém fatos e retira bastidores antigos',()=>{const text=a.businessDossier({...lead,dossier:'[FILA100]\\r\\nConstatação: Edifício publicado.\\r\\nHipótese MAS: vídeo.\\r\\n[HISTÓRICO ANTERIOR]\\r\\nREVISÃO WORK Sherlock'});assert.ok(text.includes('Edifício publicado'));assert.ok(!/WORK|Sherlock|FILA100/.test(text))});
 test('nota comercial é preservada e importação fica fora da timeline',()=>{assert.ok(a.commercialActivity({description:'Cliente pediu proposta na terça-feira'}));assert.ok(!a.commercialActivity({description:'Revisão Work / Sherlock FILA100'}))});
 test('WhatsApp inclui empresa e mensagem íntegra codificada',()=>{const html=a.whatsappPanel(lead);const href=html.match(/href="([^"]+)"/)[1].replace(/&amp;/g,'&');const url=new URL(href);assert.equal(url.pathname,'/5547999991234');assert.equal(url.searchParams.get('text'),a.whatsappMessage(lead));assert.ok(html.includes('Empresa &amp; Filhos'))});
+test('ação do WhatsApp fica em bloco separado do texto',()=>{const html=a.whatsappPanel(lead);assert.match(html,/<p class="communication-copy">[\s\S]*?<\/p><div class="communication-actions"><a class="btn primary communication-button/)});
+test('ação do Instagram fica em bloco separado do texto',()=>{const html=a.instagramPanel({...lead,instagram_url:'@empresa'});assert.match(html,/<p class="communication-copy">[\s\S]*?<\/p><div class="communication-actions"><button class="btn primary communication-button/)});
+test('e-mail corporativo abre rascunho Outlook em botão responsivo',()=>{const html=a.emailPanel({...lead,contact_email:'contato@example.com'});assert.ok(html.includes('outlook.live.com/mail/0/deeplink/compose'));assert.ok(html.includes('communication-button'));assert.ok(html.includes('contato@example.com'))});
+test('dossiê organiza informações e mantém score somente no cadastro',()=>{a.state.leads=[lead];a.state.selected=lead.id;a.state.demo=true;a.state.role='editor';a.state.editing='new';const html=a.dossierPage();assert.ok(html.includes('class="dossier-page"'));assert.ok(html.includes('Fontes e evidências'));assert.ok(html.includes('Histórico comercial'));assert.ok(!html.includes('Prioridade comercial'));assert.ok(!html.includes('/100'));assert.ok(a.editor().includes('Sinal comercial'));a.state.editing=null});
+test('navegação móvel expõe a rotina e menu Mais',()=>{a.state.demo=true;a.state.role='editor';a.state.mobileMenuOpen=true;const html=a.mobileNavMarkup();assert.ok(html.includes('data-id="today"'));assert.ok(html.includes('data-action="mobile-more"'));assert.ok(html.includes('Acompanhamento'));a.state.mobileMenuOpen=false});
 test('funcionário não vê diagnóstico técnico',()=>{a.state.role='editor';assert.ok(!a.navItems().some(x=>x[0]==='tests'));a.state.role='admin';assert.ok(a.navItems().some(x=>x[0]==='tests'))});
 test('alerta cadastral continua no resumo comercial',()=>assert.ok(a.businessDossier({...lead,dossier:'[ALERTA CADASTRAL — fonte secundária]\\nConfirmar situação antes de abordar.\\n[FILA100]\\nConstatação: Identidade pendente.'}).includes('Confirmar situação')));
 test('nome de empreendimento High to Work não oculta nota comercial',()=>assert.ok(a.commercialActivity({description:'Cliente pediu proposta para High to Work'})));
@@ -37,19 +42,23 @@ console.log('TOTAL '+count+' PASS');
 {
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const ctx={window:{MAS_CONFIG:{}},document:{getElementById:()=>({innerHTML:'',addEventListener(){}})},URL,crypto:require('node:crypto').webcrypto,FormData:class{constructor(o){this.o=o}get(k){return this.o[k]}}};
-vm.createContext(ctx);vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('init();\n})();','window.api={state,blank,score,saveFollowup,followupData,leadPriority,visibleLeads,followupPage,activityHTML,commercialActivity};\n})();'),ctx);
+vm.createContext(ctx);vm.runInContext(fs.readFileSync(__dirname+'/../app.js','utf8').replace('init();\n})();','window.api={state,blank,score,saveFollowup,followupData,leadPriority,visibleLeads,followupPage,activityHTML,commercialActivity,todayPage,validDueDate};\n})();'),ctx);
 const a=ctx.window.api;let n=0;function check(name,f){f();n++;console.log('PASS '+name)}
 (async()=>{a.state.demo=true;a.state.role='editor';a.state.user={id:'staff',user_metadata:{username:'arch01'}};a.state.leads=[{...a.blank(),id:'a',company:'Empresa A',verification_status:'verificada',icp_sector:10},{...a.blank(),id:'b',company:'Empresa B',verification_status:'verificada'}];a.state.selected='b';
-await a.saveFollowup({action:'apresentacao',priority:'urgente',comment:'Apresentação realizada. Retornar amanhã.'});
+await a.saveFollowup({action:'apresentacao',priority:'urgente',comment:'Apresentação realizada. Retornar amanhã.',due_date:'2099-02-10'});
 check('ação e comentário preservados',()=>assert.equal(a.followupData(a.state.activities[0]).action,'apresentacao'));
+check('data da próxima ação fica registrada no histórico existente',()=>assert.equal(a.followupData(a.state.activities[0]).due_date,'2099-02-10'));
 check('prioridade persiste no histórico carregável',()=>assert.equal(a.leadPriority(a.state.leads[1]),'urgente'));
 check('prioridade ordena antes de score maior',()=>assert.equal(a.visibleLeads()[0].id,'b'));
 check('prioridade não muda score ou funil',()=>{assert.equal(a.score(a.state.leads[1]),0);assert.equal(a.state.leads[1].commercial_status,'nao_contatada')});
-check('aba mostra formulário e histórico',()=>{const html=a.followupPage();assert.ok(html.includes('Salvar atualização'));assert.ok(html.includes('Apresentação realizada.'))});
+check('aba mostra formulário, histórico e campo de próxima ação',()=>{const html=a.followupPage();assert.ok(html.includes('Salvar atualização'));assert.ok(html.includes('Apresentação realizada.'));assert.ok(html.includes('Data da próxima ação'))});
+a.state.selected='a';await a.saveFollowup({action:'retorno',priority:'alta',comment:'Retomar o contato.',due_date:'2000-01-01'});a.state.selected='b';
+check('rotina separa ações atrasadas, agendadas e sem data',()=>{const html=a.todayPage();assert.ok(html.includes('Atrasada'));assert.ok(html.includes('Agendada'));assert.ok(html.includes('Empresa A'));assert.ok(html.includes('Empresa B'));assert.ok(html.includes('Sem data'))});
 check('comentários não somem por mencionar ferramenta',()=>assert.ok(a.commercialActivity({description:'[MAS_ACOMPANHAMENTO_V1]'+JSON.stringify({action:'comentario',priority:'alta',comment:'Comentário sobre Sherlock'})})));
 check('HTML de comentário escapado',()=>assert.ok(a.activityHTML({description:'[MAS_ACOMPANHAMENTO_V1]'+JSON.stringify({action:'comentario',priority:'normal',comment:'<img src=x onerror=alert(1)>'}),created_at:new Date().toISOString(),author_id:'staff'}).includes('&lt;img')));
 check('JSON inválido mantém nota antiga legível',()=>assert.equal(a.followupData({description:'[MAS_ACOMPANHAMENTO_V1]{bad'}),null));
 await assert.rejects(a.saveFollowup({action:'comentario',priority:'alta',comment:' '}));n++;console.log('PASS comentário vazio rejeitado');
+await assert.rejects(a.saveFollowup({action:'comentario',priority:'alta',comment:'teste',due_date:'2025-02-31'}));n++;console.log('PASS data de próxima ação inválida rejeitada');
 a.state.demo=false;a.state.role='viewer';await assert.rejects(a.saveFollowup({action:'comentario',priority:'alta',comment:'teste'}));n++;console.log('PASS leitor não grava');
 a.state.role='editor';a.state.workspace='workspace';a.state.db={from(){return {insert(){return {select:async()=>({error:new Error('Banco indisponível')})}}}}};await assert.rejects(a.saveFollowup({action:'contato',priority:'alta',comment:'teste'}));n++;console.log('PASS falha do banco não confirma gravação');
 console.log('TOTAL '+n+' PASS');})().catch(e=>{console.error(e);process.exitCode=1});
