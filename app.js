@@ -78,6 +78,14 @@ if(x.verification_status==='descartada'||['nao_contatar','perdida'].includes(x.c
 const n=whatsappNumber(x.contact_phone),message=whatsappMessage(x);
 return '<div class="panel" style="margin-top:13px"><h2>WhatsApp</h2>'+(n?'<p>'+escape(message)+'</p><a class="btn primary" href="https://wa.me/'+n+'?text='+escape(encodeURIComponent(message))+'" target="_blank" rel="noopener noreferrer">Abrir conversa com mensagem</a><p class="muted">Revise o destinatário e a mensagem antes de enviar. A disponibilidade deste número no WhatsApp precisa ser confirmada.</p>':'<p>WhatsApp não confirmado. Utilize o e-mail ou formulário corporativo indicado no dossiê.</p>')+'</div>';
 }
+function instagramPanel(x){
+if(state.demo)return '<div class="panel"><h2>Instagram</h2><p>Demonstração fictícia: contatos externos desativados.</p></div>';
+if(x.verification_status==='descartada'||['nao_contatar','perdida'].includes(x.commercial_status)||/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||''))return '<div class="panel" style="margin-top:13px"><h2>Instagram Direct</h2><p>Contato bloqueado para este cadastro.</p></div>';
+const profile=instagramURL(x.instagram_url);
+if(!profile)return '<div class="panel" style="margin-top:13px"><h2>Instagram Direct</h2><p>Instagram oficial não informado.</p></div>';
+const username=profile.split('/').filter(Boolean).pop();
+return '<div class="panel" style="margin-top:13px"><h2>Instagram Direct</h2><p>'+escape(whatsappMessage(x))+'</p>'+button('Abrir Direct e copiar mensagem','instagram-direct',x.id,'primary')+'<p class="muted">O Instagram abrirá a conversa e o texto será copiado. Cole, revise e envie manualmente; o CRM não envia mensagens pelo Instagram.</p></div>';
+}
 function readyLead(x){
 if(state.demo)return true;
 return verified(x)&&!['nao_contatar','perdida'].includes(x.commercial_status)&&!/^QA MAS INTERNO/i.test(x.company||'')&&!/FORA DA FILA100|Contato pendente de conferência/i.test(x.contact_channel||'')&&!!(whatsappNumber(x.contact_phone)||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x.contact_email||'')||(/formul[aá]rio/i.test(x.contact_channel||'')&&safeURL(x.website||x.source_url)));
@@ -249,7 +257,7 @@ ev.map(e=>'<div class="detail"><strong>'+escape(/sherlock|FILA100|revis[aã]o do
 (editable()?'<form id="activity-form"><div class="grid2">'+select("type","Tipo","nota",[["nota","Nota"],["evidencia","Pesquisa"],["contato","Contato realizado"],["reuniao","Reunião"],["proposta","Proposta"]])+field("description","Descrição do ocorrido","")+'</div><button class="btn primary" style="margin-top:10px" type="submit">Adicionar registro</button></form>':"")+'</div></div>'+
 '<div><div class="panel"><h2>Prioridade comercial</h2><div class="row between"><strong style="font-size:31px">'+(s??"—")+' <small class="muted" style="font-size:12px">/100</small></strong>'+pill(level(x)[0],level(x)[1])+'</div>'+(s===null?'<p class="muted">Pontuação não publicada: identidade ainda não verificada ou lead descartado.</p>':"")+
 gr.map(g=>{const n=g[1].reduce((v,k)=>v+Number(x[k]||0),0);return '<div style="margin-top:14px"><div class="row between" style="font-size:12px;margin-bottom:6px"><span>'+g[0]+'</span><strong>'+n+'/'+g[2]+'</strong></div><div class="track"><div class="track-fill" style="width:'+(n/g[2]*100)+'%"></div></div></div>'}).join("")+detail("Confiança",x.confidence)+'</div>'+
-whatsappPanel(x)+emailPanel(x)+'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
+whatsappPanel(x)+instagramPanel(x)+emailPanel(x)+'<div class="panel" style="margin-top:13px"><h2>Funil comercial</h2>'+(editable()?'<form id="stage-form">'+select("stage","Situação atual",x.commercial_status,STAGES)+'<button class="btn primary" style="margin-top:12px" type="submit">Atualizar status</button></form>':'<p>'+escape(label(STAGES,x.commercial_status))+'</p>')+'</div></div></div>';
 }
 function testPage(){
 return '<div class="panel"><h2>Diagnóstico da aplicação</h2><p class="muted">Estes testes verificam funções locais do programa. Não substituem testes reais de RLS nem de disponibilidade do Supabase.</p>'+button("Executar testes","test","","primary")+'<div style="margin-top:14px">'+state.checks.map(x=>'<div class="testline"><span>'+escape(x.name)+'</span>'+pill(x.ok?"PASSOU":"FALHOU",x.ok?"green":"amber")+'</div>').join("")+'</div></div>';
@@ -380,6 +388,14 @@ else if(act==="edit"){if(!editable())throw Error("Somente leitura.");state.notic
 else if(act==="close"){state.draft=null;state.editing=null;render();}
 else if(act==="refresh")await refresh();
 else if(act==="test")test();
+else if(act==="instagram-direct"){
+const lead=state.leads.find(x=>x.id===id),profile=lead&&instagramURL(lead.instagram_url);
+if(!lead||!profile)throw Error("Instagram oficial não informado.");
+const username=profile.split("/").filter(Boolean).pop();
+window.open("https://ig.me/m/"+encodeURIComponent(username),"_blank","noopener,noreferrer");
+try{await navigator.clipboard.writeText(whatsappMessage(lead));note("Mensagem copiada. Cole-a na conversa do Instagram e envie manualmente.");}
+catch{note("Conversa aberta. Copie o texto exibido no CRM e cole no Direct.",true);}
+}
 else if(act==="team-refresh"){await loadTeam();state.notice="Equipe atualizada.";state.error=false;render();}
 else if(act==="csv")exportCSV();
 else if(act==="delete")await deletion(id,"leads");
