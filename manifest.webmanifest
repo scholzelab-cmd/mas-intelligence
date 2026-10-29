@@ -1,0 +1,18 @@
+{
+  "name": "MAS Intelligence CRM",
+  "short_name": "MAS CRM",
+  "description": "CRM comercial da MAS para prospecção B2B.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "./icons/mas-crm.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
